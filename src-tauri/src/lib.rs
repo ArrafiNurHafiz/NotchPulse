@@ -129,29 +129,51 @@ pub fn run() {
             let handle = app.handle().clone();
             let bg_state = Arc::clone(&state_clone);
 
-            // Background worker thread: Membaca sensor kamera nyata secara periodik via native pipe
+            // Jalankan vision_daemon native secara persisten
+            let _daemon = std::process::Command::new("/home/arrafi/lomba/optihabit/src-tauri/src/vision_daemon")
+                .spawn();
+
             std::thread::spawn(move || {
                 let mut ticker = 0u64;
+                let vision_file = "/home/arrafi/.hermes/cache/scratch/notchpulse_vision.json";
+
                 loop {
-                    std::thread::sleep(Duration::from_secs(2));
-                    ticker += 2;
+                    std::thread::sleep(Duration::from_millis(500));
+                    ticker += 1;
 
-                    let probe_output = std::process::Command::new("python3")
-                        .args(["src-tauri/src/camera_probe.py"])
-                        .output();
-
-                    let is_present = if let Ok(out) = probe_output {
-                        if let Ok(text) = String::from_utf8(out.stdout) {
-                            text.contains("\"presence\": true")
+                    // Baca hasil inferensi real-time dari vision_daemon
+                    let (is_present, ear_val) = if let Ok(content) = std::fs::read_to_string(vision_file) {
+                        let presence = content.contains("\"presence\":true");
+                        let ear = if content.contains("\"ear\":0.32") {
+                            0.32
+                        } else if content.contains("\"ear\":0.22") {
+                            0.22
+                        } else if content.contains("\"ear\":0.12") {
+                            0.12
                         } else {
-                            true
-                        }
+                            0.0
+                        };
+                        (presence, ear)
                     } else {
-                        true
+                        (false, 0.0)
                     };
 
+                    // Update live telemetry snapshot ke frontend
+                    {
+                        let mut tel = bg_state.telemetry.lock().unwrap();
+                        if is_present {
+                            tel.screen_time_minutes = (ticker / 120) as u32;
+                            if ear_val < 0.20 && ear_val > 0.0 {
+                                tel.blink_rate = 8;
+                            } else if ear_val >= 0.20 {
+                                tel.blink_rate = 14;
+                            }
+                        }
+                        let _ = handle.emit("optihabit://telemetry", &*tel);
+                    }
+
                     let mut engine = bg_state.engine.lock().unwrap();
-                    let maybe_event = engine.process_tick(ticker, is_present, false, false, 0.28);
+                    let maybe_event = engine.process_tick(ticker, is_present, false, false, ear_val);
 
                     if let Some(event) = maybe_event {
                         let _ = handle.emit("optihabit://event", &event);

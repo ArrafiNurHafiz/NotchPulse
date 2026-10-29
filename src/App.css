@@ -40,6 +40,7 @@ html, body, #root {
   border-bottom-left-radius: 20px;
   border-bottom-right-radius: 20px;
   border-top: none;
+  opacity: 1 !important;
   will-change: width, height, transform, box-shadow, border-color;
   transition: width 0.38s cubic-bezier(0.16, 1, 0.3, 1),
               height 0.38s cubic-bezier(0.16, 1, 0.3, 1),

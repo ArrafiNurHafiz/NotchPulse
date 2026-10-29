@@ -26,3 +26,5 @@ dist-ssr
 # Rust target
 src-tauri/target/
 **/target/
+src-tauri/src/vision_daemon
+src-tauri/src/vision_detector

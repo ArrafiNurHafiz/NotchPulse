@@ -115,14 +115,13 @@ pub fn run() {
             simulate_vision_trigger
         ])
         .setup(move |app| {
-            // Posisi notch persis di tepi atas layar laptop (seperti Coucou / macOS Notch)
             if let Some(window) = app.get_webview_window("island") {
                 if let Ok(Some(monitor)) = window.current_monitor() {
                     let screen_size = monitor.size();
                     let scale_factor = monitor.scale_factor();
                     let win_w = (420.0 * scale_factor) as i32;
                     let x = ((screen_size.width as i32) - win_w) / 2;
-                    let y = 0; // Menempel langsung ke bezel atas monitor
+                    let y = 0;
                     let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
                 }
             }
@@ -141,7 +140,6 @@ pub fn run() {
 
                     if let Some(event) = maybe_event {
                         let _ = handle.emit("optihabit://event", &event);
-                        // Persist ke database lokal
                         if let Ok(db) = bg_state.db.lock() {
                             let _ = db.log_event(None, &format!("{:?}", event.alert_type), 0, &event.message);
                         }

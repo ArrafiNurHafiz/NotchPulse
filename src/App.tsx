@@ -128,12 +128,12 @@ export default function App() {
       {/* Coucou-inspired Notch Island */}
       <div 
         onClick={toggleExpand}
-        className={`spring-transition cursor-pointer island-notch-top overflow-hidden flex flex-col items-center ${
+        className={`coucou-spring cursor-pointer island-notch overflow-hidden flex flex-col items-center ${
           expanded 
-            ? "w-[410px] bg-black/95 text-white p-4" 
+            ? "w-[410px] bg-black text-white p-4" 
             : alertType !== "idle"
-              ? "w-[350px] bg-black/95 text-white py-1.5 px-3.5"
-              : "w-[220px] bg-black/95 hover:bg-neutral-900 text-neutral-300 py-1.5 px-3.5"
+              ? "w-[350px] bg-black text-white py-1.5 px-3.5"
+              : "w-[220px] bg-black hover:bg-neutral-950 text-neutral-200 py-1.5 px-3.5"
         }`}
       >
         {/* Compact / Collapsed Header */}

@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "identifier": "com.arrafi.notchpulse",
   "build": {
+    "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist"
   },
   "app": {
@@ -18,13 +19,7 @@
         "transparent": true,
         "shadow": false,
         "alwaysOnTop": true,
-        "skipTaskbar": true,
-        "focus": false,
-        "visible": true,
-        "center": false,
-        "maximizable": false,
-        "minimizable": false,
-        "closable": false
+        "skipTaskbar": true
       }
     ],
     "security": {

@@ -1,5 +1,6 @@
 mod vision_engine;
 mod db;
+mod layer_shell;
 
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -112,18 +113,13 @@ pub fn run() {
         .manage(shared_state)
         .invoke_handler(tauri::generate_handler![
             get_current_telemetry,
-            simulate_vision_trigger
+            simulate_vision_trigger,
+            layer_shell::update_notch_bounds
         ])
         .setup(move |app| {
             if let Some(window) = app.get_webview_window("island") {
-                if let Ok(Some(monitor)) = window.current_monitor() {
-                    let screen_size = monitor.size();
-                    let scale_factor = monitor.scale_factor();
-                    let win_w = (430.0 * scale_factor) as i32;
-                    let x = ((screen_size.width as i32) - win_w) / 2;
-                    let y = 0;
-                    let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
-                }
+                layer_shell::setup_layer_shell(&window);
+                let _ = window.show();
             }
 
             let handle = app.handle().clone();

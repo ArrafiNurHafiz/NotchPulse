@@ -63,6 +63,17 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Update input region dinamis ke backend Rust / Wayland layer-shell
+  useEffect(() => {
+    let bounds = { x: 105.0, y: 0.0, width: 220.0, height: 44.0 };
+    if (widgetState === "alert") {
+      bounds = { x: 40.0, y: 0.0, width: 350.0, height: 44.0 };
+    } else if (widgetState === "expanded") {
+      bounds = { x: 10.0, y: 0.0, width: 410.0, height: 240.0 };
+    }
+    invoke("update_notch_bounds", bounds).catch(() => {});
+  }, [widgetState]);
+
   // Listen stream event dari backend Rust
   useEffect(() => {
     let unlistenEvent: (() => void) | undefined;

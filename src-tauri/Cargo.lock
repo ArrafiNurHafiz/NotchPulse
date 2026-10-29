@@ -2394,6 +2394,7 @@ dependencies = [
 name = "optihabit"
 version = "0.1.0"
 dependencies = [
+ "gtk",
  "rusqlite",
  "serde",
  "serde_json",

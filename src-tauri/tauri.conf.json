@@ -9,15 +9,22 @@
   "app": {
     "windows": [
       {
+        "label": "island",
         "title": "NotchPulse Island",
         "width": 420,
         "height": 180,
+        "resizable": false,
         "decorations": false,
         "transparent": true,
+        "shadow": false,
         "alwaysOnTop": true,
         "skipTaskbar": true,
-        "resizable": false,
-        "shadow": false
+        "focus": false,
+        "visible": true,
+        "center": false,
+        "maximizable": false,
+        "minimizable": false,
+        "closable": false
       }
     ],
     "security": {

@@ -99,16 +99,16 @@ export default function App() {
   };
 
   return (
-    <div className="w-full flex flex-col items-center justify-start p-2 select-none">
-      {/* Dynamic Island Capsule */}
+    <div className="w-full flex flex-col items-center justify-start select-none">
+      {/* Coucou-inspired Notch Capsule: Menempel ke bezel atas layar */}
       <div 
         onClick={() => setExpanded(!expanded)}
-        className={`transition-all duration-300 ease-out cursor-pointer shadow-2xl backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden flex flex-col items-center ${
+        className={`transition-all duration-300 cubic-bezier(0.16, 1, 0.3, 1) cursor-pointer shadow-2xl backdrop-blur-2xl border-x border-b border-white/10 island-notch-top overflow-hidden flex flex-col items-center ${
           expanded 
-            ? "w-[390px] bg-neutral-950/90 text-white p-3.5" 
+            ? "w-[400px] bg-black/95 text-white p-4" 
             : alertType !== "idle"
-              ? "w-[330px] bg-neutral-900/95 text-white py-1.5 px-3"
-              : "w-[190px] bg-black/90 hover:bg-neutral-900/90 text-neutral-300 py-1 px-3"
+              ? "w-[340px] bg-black/95 text-white py-2 px-3.5"
+              : "w-[210px] bg-black/95 hover:bg-neutral-900 text-neutral-200 py-1.5 px-3.5"
         }`}
       >
         {/* Collapsed / Active Alert Pill Header */}

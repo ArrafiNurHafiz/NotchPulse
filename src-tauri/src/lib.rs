@@ -115,14 +115,14 @@ pub fn run() {
             simulate_vision_trigger
         ])
         .setup(move |app| {
-            // Posisi otomatis di tengah atas monitor aktif (kompatibel multi-resolusi / multi-monitor)
-            if let Some(window) = app.get_webview_window("main") {
+            // Posisi notch persis di tepi atas layar laptop (seperti Coucou / macOS Notch)
+            if let Some(window) = app.get_webview_window("island") {
                 if let Ok(Some(monitor)) = window.current_monitor() {
                     let screen_size = monitor.size();
                     let scale_factor = monitor.scale_factor();
                     let win_w = (420.0 * scale_factor) as i32;
                     let x = ((screen_size.width as i32) - win_w) / 2;
-                    let y = (12.0 * scale_factor) as i32;
+                    let y = 0; // Menempel langsung ke bezel atas monitor
                     let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
                 }
             }

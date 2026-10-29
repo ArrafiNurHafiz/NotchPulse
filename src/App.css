@@ -14,4 +14,13 @@ html, body, #root {
   background: transparent !important;
   background-color: transparent !important;
   user-select: none;
+  cursor: default;
+}
+
+/* Coucou-style Island Drop Curve */
+.island-notch-top {
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
 }

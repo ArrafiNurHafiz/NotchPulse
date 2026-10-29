@@ -39,7 +39,15 @@ NotchPulse adalah aplikasi desktop berbasis Tauri v2 yang menghadirkan **Dynamic
 - Rust & Cargo (1.80+)
 - Dependensi sistem Linux untuk Tauri v2 (`webkit2gtk`, `libsoup3`, dll.)
 
-### Instalasi & Menjalankan
+### Pemasangan Cepat (1-Langkah)
+
+Jalankan skrip pemasangan otomatis universal untuk Linux laptop:
+```bash
+bash install.sh
+```
+Skrip akan memasang biner ke `~/.local/bin/notchpulse`, mendaftarkan menu desktop launcher, dan mengonfigurasi autostart saat laptop menyala.
+
+### Pemasangan Manual & Menjalankan
 
 1. Pasang dependensi frontend:
    ```bash

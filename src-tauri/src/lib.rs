@@ -3,7 +3,7 @@ mod db;
 
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use vision_engine::{AlertType, HabitEventPayload, TelemetrySnapshot, VisionPipelineEngine};
 use db::DatabaseManager;
 
@@ -115,6 +115,18 @@ pub fn run() {
             simulate_vision_trigger
         ])
         .setup(move |app| {
+            // Posisi otomatis di tengah atas monitor aktif (kompatibel multi-resolusi / multi-monitor)
+            if let Some(window) = app.get_webview_window("main") {
+                if let Ok(Some(monitor)) = window.current_monitor() {
+                    let screen_size = monitor.size();
+                    let scale_factor = monitor.scale_factor();
+                    let win_w = (420.0 * scale_factor) as i32;
+                    let x = ((screen_size.width as i32) - win_w) / 2;
+                    let y = (12.0 * scale_factor) as i32;
+                    let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+                }
+            }
+
             let handle = app.handle().clone();
             let bg_state = Arc::clone(&state_clone);
 

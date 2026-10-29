@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   Eye, 
   Smartphone, 
@@ -6,7 +6,9 @@ import {
   Clock, 
   ChevronDown, 
   ChevronUp, 
-  ShieldCheck 
+  ShieldCheck,
+  Sparkles,
+  RotateCcw
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
@@ -31,8 +33,10 @@ interface TelemetrySnapshot {
 
 export default function App() {
   const [expanded, setExpanded] = useState(false);
+  const [pinned, setPinned] = useState(false);
   const [alertType, setAlertType] = useState<AlertType>("idle");
   const [alertMessage, setAlertMessage] = useState("");
+  const collapseTimerRef = useRef<number | null>(null);
   
   // Real-time telemetry metrics state
   const [metrics, setMetrics] = useState<TelemetrySnapshot>({
@@ -49,7 +53,6 @@ export default function App() {
     let unlistenEvent: (() => void) | undefined;
     let unlistenTelemetry: (() => void) | undefined;
 
-    // Fetch initial state
     invoke<TelemetrySnapshot>("get_current_telemetry")
       .then((data) => {
         if (data) {
@@ -79,12 +82,30 @@ export default function App() {
     };
   }, []);
 
-  // Simulation trigger via Rust invoke
+  // Coucou-style hover auto-expand & auto-collapse
+  const handleMouseEnter = () => {
+    if (collapseTimerRef.current) {
+      window.clearTimeout(collapseTimerRef.current);
+      collapseTimerRef.current = null;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!pinned && expanded) {
+      collapseTimerRef.current = window.setTimeout(() => {
+        setExpanded(false);
+      }, 1500);
+    }
+  };
+
+  const toggleExpand = () => {
+    setExpanded(!expanded);
+  };
+
   const triggerSimulation = async (type: string) => {
     try {
       await invoke("simulate_vision_trigger", { triggerType: type });
     } catch {
-      // Fallback local update
       setAlertType(type as AlertType);
     }
   };
@@ -99,25 +120,29 @@ export default function App() {
   };
 
   return (
-    <div className="w-full flex flex-col items-center justify-start select-none">
-      {/* Coucou-inspired Notch Capsule: Menempel ke bezel atas layar */}
+    <div 
+      className="w-full flex flex-col items-center justify-start select-none"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Coucou-inspired Notch Island */}
       <div 
-        onClick={() => setExpanded(!expanded)}
-        className={`transition-all duration-300 cubic-bezier(0.16, 1, 0.3, 1) cursor-pointer shadow-2xl backdrop-blur-2xl border-x border-b border-white/10 island-notch-top overflow-hidden flex flex-col items-center ${
+        onClick={toggleExpand}
+        className={`spring-transition cursor-pointer island-notch-top overflow-hidden flex flex-col items-center ${
           expanded 
-            ? "w-[400px] bg-black/95 text-white p-4" 
+            ? "w-[410px] bg-black/95 text-white p-4" 
             : alertType !== "idle"
-              ? "w-[340px] bg-black/95 text-white py-2 px-3.5"
-              : "w-[210px] bg-black/95 hover:bg-neutral-900 text-neutral-200 py-1.5 px-3.5"
+              ? "w-[350px] bg-black/95 text-white py-1.5 px-3.5"
+              : "w-[220px] bg-black/95 hover:bg-neutral-900 text-neutral-300 py-1.5 px-3.5"
         }`}
       >
-        {/* Collapsed / Active Alert Pill Header */}
+        {/* Compact / Collapsed Header */}
         <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-2">
             {alertType === "idle" && (
               <>
-                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-semibold tracking-wide">OptiHabit</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                <span className="text-xs font-semibold tracking-wider text-neutral-200">NotchPulse</span>
               </>
             )}
 
@@ -134,7 +159,7 @@ export default function App() {
               <>
                 <Smartphone className="w-4 h-4 text-amber-400 animate-pulse" />
                 <span className="text-xs font-medium text-amber-200">
-                  {alertMessage || "Distraksi ponsel terdeteksi"}
+                  {alertMessage || "Distraksi HP terdeteksi"}
                 </span>
               </>
             )}
@@ -158,86 +183,112 @@ export default function App() {
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+          <div className="flex items-center gap-2 text-xs text-neutral-400">
             {alertType === "idle" && !expanded && (
-              <span className="text-[10px] font-mono bg-white/10 px-1.5 py-0.5 rounded-full text-emerald-400 font-semibold">
+              <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded-full text-emerald-400 font-bold border border-emerald-500/20">
                 {metrics.focus_score}%
               </span>
             )}
-            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {expanded ? (
+              <ChevronUp className="w-4 h-4 text-neutral-400 hover:text-white transition-colors" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-neutral-400 hover:text-white transition-colors" />
+            )}
           </div>
         </div>
 
-        {/* Expanded Dashboard Panel */}
+        {/* Expanded Dashboard Panel (Coucou Card Architecture) */}
         {expanded && (
-          <div className="w-full mt-3 pt-2.5 border-t border-white/10 flex flex-col gap-3">
-            {/* Health & Habit Metrics Grid */}
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            className="w-full mt-3.5 pt-3 border-t border-white/10 flex flex-col gap-3"
+          >
+            {/* Header Status & Pin Toggle */}
+            <div className="flex items-center justify-between text-[11px] text-neutral-400 px-0.5">
+              <div className="flex items-center gap-1.5 text-neutral-300">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="font-medium">Wellness Telemetry</span>
+              </div>
+              <button 
+                onClick={() => setPinned(!pinned)}
+                className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
+                  pinned 
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" 
+                    : "bg-white/5 text-neutral-400 hover:text-neutral-200"
+                }`}
+              >
+                {pinned ? "Pinned" : "Auto-collapse"}
+              </button>
+            </div>
+
+            {/* 4-Stat Metric Grid */}
             <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+              <div className="bg-white/5 p-2 rounded-xl border border-white/5 hover:bg-white/[0.08] transition-colors">
                 <div className="flex justify-center text-cyan-400 mb-1"><Eye className="w-3.5 h-3.5" /></div>
-                <div className="text-xs font-bold">{metrics.blink_rate}/m</div>
-                <div className="text-[9px] text-neutral-400 uppercase tracking-wider">Kedip</div>
+                <div className="text-xs font-bold text-neutral-100">{metrics.blink_rate}/m</div>
+                <div className="text-[9px] text-neutral-400 uppercase tracking-wider font-medium">Kedip</div>
               </div>
 
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+              <div className="bg-white/5 p-2 rounded-xl border border-white/5 hover:bg-white/[0.08] transition-colors">
                 <div className="flex justify-center text-blue-400 mb-1"><Droplets className="w-3.5 h-3.5" /></div>
-                <div className="text-xs font-bold">{metrics.hydration_count}x</div>
-                <div className="text-[9px] text-neutral-400 uppercase tracking-wider">Air</div>
+                <div className="text-xs font-bold text-neutral-100">{metrics.hydration_count}x</div>
+                <div className="text-[9px] text-neutral-400 uppercase tracking-wider font-medium">Air</div>
               </div>
 
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+              <div className="bg-white/5 p-2 rounded-xl border border-white/5 hover:bg-white/[0.08] transition-colors">
                 <div className="flex justify-center text-amber-400 mb-1"><Smartphone className="w-3.5 h-3.5" /></div>
-                <div className="text-xs font-bold">{metrics.phone_distraction_seconds}s</div>
-                <div className="text-[9px] text-neutral-400 uppercase tracking-wider">Ponsel</div>
+                <div className="text-xs font-bold text-neutral-100">{metrics.phone_distraction_seconds}s</div>
+                <div className="text-[9px] text-neutral-400 uppercase tracking-wider font-medium">Ponsel</div>
               </div>
 
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+              <div className="bg-white/5 p-2 rounded-xl border border-white/5 hover:bg-white/[0.08] transition-colors">
                 <div className="flex justify-center text-purple-400 mb-1"><Clock className="w-3.5 h-3.5" /></div>
-                <div className="text-xs font-bold">{metrics.screen_time_minutes}m</div>
-                <div className="text-[9px] text-neutral-400 uppercase tracking-wider">Layar</div>
+                <div className="text-xs font-bold text-neutral-100">{metrics.screen_time_minutes}m</div>
+                <div className="text-[9px] text-neutral-400 uppercase tracking-wider font-medium">Layar</div>
               </div>
             </div>
 
-            {/* Privacy Shield & Status Footer */}
-            <div className="flex items-center justify-between text-[11px] text-neutral-400 px-1">
+            {/* Privacy Badge */}
+            <div className="flex items-center justify-between text-[11px] text-neutral-400 px-0.5">
               <div className="flex items-center gap-1.5 text-emerald-400">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>On-device Private CV</span>
+                <span className="text-[10px]">100% On-Device & Private</span>
               </div>
-              <span className="font-mono text-neutral-500 text-[10px]">v0.1.0-alpha</span>
+              <span className="font-mono text-neutral-500 text-[9px]">v0.1.2-coucou-style</span>
             </div>
 
-            {/* Interactive Simulation Controls (For Dev & Demo Testing) */}
-            <div className="pt-1 flex items-center justify-between gap-1 text-[10px]">
+            {/* Quick Simulation Trigger Buttons */}
+            <div className="pt-1 flex items-center justify-between gap-1.5 text-[10px]">
               <button 
-                onClick={(e) => { e.stopPropagation(); triggerSimulation("blink"); }}
-                className="px-2 py-1 bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-800/40 rounded-lg text-cyan-300"
+                onClick={() => triggerSimulation("blink")}
+                className="flex-1 py-1 bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-800/40 rounded-lg text-cyan-300 transition-colors"
               >
                 Mata
               </button>
               <button 
-                onClick={(e) => { e.stopPropagation(); triggerSimulation("phone"); }}
-                className="px-2 py-1 bg-amber-950/60 hover:bg-amber-900 border border-amber-800/40 rounded-lg text-amber-300"
+                onClick={() => triggerSimulation("phone")}
+                className="flex-1 py-1 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/40 rounded-lg text-amber-300 transition-colors"
               >
                 HP
               </button>
               <button 
-                onClick={(e) => { e.stopPropagation(); triggerSimulation("hydration"); }}
-                className="px-2 py-1 bg-blue-950/60 hover:bg-blue-900 border border-blue-800/40 rounded-lg text-blue-300"
+                onClick={() => triggerSimulation("hydration")}
+                className="flex-1 py-1 bg-blue-950/40 hover:bg-blue-900/60 border border-blue-800/40 rounded-lg text-blue-300 transition-colors"
               >
                 Minum
               </button>
               <button 
-                onClick={(e) => { e.stopPropagation(); triggerSimulation("screentime"); }}
-                className="px-2 py-1 bg-purple-950/60 hover:bg-purple-900 border border-purple-800/40 rounded-lg text-purple-300"
+                onClick={() => triggerSimulation("screentime")}
+                className="flex-1 py-1 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/40 rounded-lg text-purple-300 transition-colors"
               >
                 Jeda
               </button>
               <button 
-                onClick={(e) => { e.stopPropagation(); resetAlert(); }}
-                className="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-neutral-300"
+                onClick={resetAlert}
+                className="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-neutral-300 transition-colors flex items-center gap-1"
+                title="Reset ke mode normal"
               >
-                Reset
+                <RotateCcw className="w-3 h-3" />
               </button>
             </div>
           </div>

@@ -95,11 +95,11 @@ pub fn run() {
     let shared_state = Arc::new(AppState {
         engine: Mutex::new(VisionPipelineEngine::new()),
         telemetry: Mutex::new(TelemetrySnapshot {
-            focus_score: 95,
-            blink_rate: 16,
-            screen_time_minutes: 25,
+            focus_score: 85,
+            blink_rate: 12,
+            screen_time_minutes: 20,
             hydration_count: 2,
-            phone_distraction_seconds: 10,
+            phone_distraction_seconds: 480,
             current_alert: AlertType::Idle,
         }),
         db: Mutex::new(db_manager),
@@ -129,14 +129,29 @@ pub fn run() {
             let handle = app.handle().clone();
             let bg_state = Arc::clone(&state_clone);
 
+            // Background worker thread: Membaca sensor kamera nyata secara periodik via native pipe
             std::thread::spawn(move || {
                 let mut ticker = 0u64;
                 loop {
-                    std::thread::sleep(Duration::from_secs(1));
-                    ticker += 1;
+                    std::thread::sleep(Duration::from_secs(2));
+                    ticker += 2;
+
+                    let probe_output = std::process::Command::new("python3")
+                        .args(["src-tauri/src/camera_probe.py"])
+                        .output();
+
+                    let is_present = if let Ok(out) = probe_output {
+                        if let Ok(text) = String::from_utf8(out.stdout) {
+                            text.contains("\"presence\": true")
+                        } else {
+                            true
+                        }
+                    } else {
+                        true
+                    };
 
                     let mut engine = bg_state.engine.lock().unwrap();
-                    let maybe_event = engine.process_tick(ticker, true, false, false, 0.28);
+                    let maybe_event = engine.process_tick(ticker, is_present, false, false, 0.28);
 
                     if let Some(event) = maybe_event {
                         let _ = handle.emit("optihabit://event", &event);
@@ -149,6 +164,12 @@ pub fn run() {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app, event| {
+            if let tauri::RunEvent::ExitRequested { api, .. } = event {
+                // Menjaga window overlay tetap persisten di background
+                api.prevent_exit();
+            }
+        });
 }

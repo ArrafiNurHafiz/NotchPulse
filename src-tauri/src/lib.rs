@@ -119,7 +119,7 @@ pub fn run() {
                 if let Ok(Some(monitor)) = window.current_monitor() {
                     let screen_size = monitor.size();
                     let scale_factor = monitor.scale_factor();
-                    let win_w = (420.0 * scale_factor) as i32;
+                    let win_w = (430.0 * scale_factor) as i32;
                     let x = ((screen_size.width as i32) - win_w) / 2;
                     let y = 0;
                     let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));

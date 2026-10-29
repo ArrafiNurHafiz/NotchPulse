@@ -5,12 +5,12 @@
   --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  --ink: #f5f6f8;
-  --dim: #9398a1;
-  --dim-2: #6b7079;
-  --card: #121316;
-  --card-border: rgba(255, 255, 255, 0.08);
-  --hairline: rgba(255, 255, 255, 0.04);
+  /* Sesuai Dokumen Spesifikasi Desain NotchPulse */
+  --color-focus: #22C55E;     /* Hijau (Fokus / Normal) */
+  --color-eye: #06B6D4;       /* Cyan (Mata / Aman) */
+  --color-phone: #F97316;     /* Oranye (HP / Peringatan) */
+  --color-screen: #8B5CF6;    /* Ungu (Layar / Perlu Istirahat) */
+  --color-alert-sub: #FBBF24; /* Kuning (Peringatan Tambahan) */
 }
 
 * {
@@ -28,28 +28,46 @@ html, body, #root {
   background-color: transparent !important;
   overflow: hidden;
   font-family: var(--font);
-  color: var(--ink);
+  color: #f5f6f8;
   -webkit-font-smoothing: antialiased;
   user-select: none;
   cursor: default;
 }
 
-/* Coucou Apple Notch Shell */
-.island-notch {
-  background: #000000;
+/* Base Top-Bezel Notch Shell */
+.notch-shell {
+  background: #090A0F;
   border-bottom-left-radius: 20px;
   border-bottom-right-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
   border-top: none;
-  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.8),
-              0 0 0 1px rgba(0, 0, 0, 0.5);
-  will-change: width, height, transform;
-}
-
-/* Coucou Apple Spring Transition Curve */
-.coucou-spring {
+  will-change: width, height, transform, box-shadow, border-color;
   transition: width 0.38s cubic-bezier(0.16, 1, 0.3, 1),
               height 0.38s cubic-bezier(0.16, 1, 0.3, 1),
-              padding 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              background-color 0.2s ease-out;
+              border-color 0.25s ease-out,
+              box-shadow 0.25s ease-out;
+}
+
+/* State Glow & Border Variants sesuai Spesifikasi Desain */
+.notch-glow-idle {
+  border-left: 1.5px solid rgba(34, 197, 94, 0.45);
+  border-right: 1.5px solid rgba(34, 197, 94, 0.45);
+  border-bottom: 1.5px solid rgba(34, 197, 94, 0.55);
+  box-shadow: 0 10px 25px -4px rgba(34, 197, 94, 0.25),
+              0 0 15px 1px rgba(34, 197, 94, 0.15);
+}
+
+.notch-glow-alert {
+  border-left: 1.5px solid rgba(249, 115, 22, 0.55);
+  border-right: 1.5px solid rgba(249, 115, 22, 0.55);
+  border-bottom: 1.5px solid rgba(249, 115, 22, 0.65);
+  box-shadow: 0 12px 28px -4px rgba(249, 115, 22, 0.3),
+              0 0 18px 2px rgba(249, 115, 22, 0.18);
+}
+
+.notch-glow-expanded {
+  border-left: 1.5px solid rgba(139, 92, 246, 0.55);
+  border-right: 1.5px solid rgba(139, 92, 246, 0.55);
+  border-bottom: 1.5px solid rgba(139, 92, 246, 0.65);
+  box-shadow: 0 16px 36px -4px rgba(139, 92, 246, 0.35),
+              0 0 20px 2px rgba(139, 92, 246, 0.2);
 }

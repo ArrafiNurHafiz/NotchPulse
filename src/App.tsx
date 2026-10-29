@@ -164,7 +164,7 @@ export default function App() {
       {/* Dynamic Island Capsule - Top Bezel */}
       <div 
         onClick={handlePillClick}
-        className={`notch-shell cursor-pointer overflow-hidden flex flex-col items-center ${
+        className={`hardware-notch-shell cursor-pointer overflow-hidden flex flex-col items-center ${
           widgetState === "idle"
             ? "w-[220px] notch-glow-idle py-1.5 px-3.5"
             : widgetState === "alert"
@@ -172,23 +172,25 @@ export default function App() {
               : "w-[410px] notch-glow-expanded p-3.5"
         }`}
       >
+        {/* Specular Highlight Line */}
+        <div className="notch-specular" />
         {/* =================================================================== */}
         {/* 1. STATE: IDLE (Lebar: 220px, Border/Glow: Hijau #22C55E)           */}
         {/* =================================================================== */}
         {widgetState === "idle" && (
-          <div className="w-full flex items-center justify-between">
+          <div className="w-full flex items-center justify-between z-10">
             {/* Kiri: Ikon Daun / Fokus */}
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-[#22C55E]/20 flex items-center justify-center border border-[#22C55E]/40">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#22C55E] animate-pulse" />
+              <div className="w-5 h-5 rounded-full bg-[#22C55E]/20 flex items-center justify-center border border-[#22C55E]/40 shadow-[0_0_8px_rgba(34,197,94,0.4)]">
+                <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
               </div>
               <span className="text-xs font-semibold text-white tracking-wide">Fokus</span>
             </div>
 
             {/* Tengah/Kanan: Skor 85 & Gelombang Audio Hijau */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-neutral-300">Skor {metrics.focusScore}</span>
-              <div className="flex items-center gap-0.5 text-[#22C55E]">
+              <span className="text-xs font-mono font-medium text-neutral-300">Skor {metrics.focusScore}</span>
+              <div className="flex items-center gap-0.5 text-[#22C55E] drop-shadow-[0_0_6px_rgba(34,197,94,0.6)]">
                 <AudioWaveform className="w-4 h-4 animate-pulse" />
               </div>
             </div>
@@ -199,25 +201,25 @@ export default function App() {
         {/* 2. STATE: ALERT (Lebar: 350px, Border/Glow: Oranye #F97316)          */}
         {/* =================================================================== */}
         {widgetState === "alert" && (
-          <div className="w-full flex items-center justify-between gap-1 text-[11px]">
+          <div className="w-full flex items-center justify-between gap-1.5 text-[11px] z-10">
             {/* Sub-Pill 1: Mata (Biru Toska / Cyan #06B6D4) */}
-            <div className="flex items-center gap-1.5 bg-[#06B6D4]/10 border border-[#06B6D4]/30 px-2 py-0.5 rounded-full">
+            <div className="flex items-center gap-1.5 bg-[#06B6D4]/15 border border-[#06B6D4]/35 px-2.5 py-0.5 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.25)]">
               <Eye className="w-3.5 h-3.5 text-[#06B6D4]" />
-              <span className="text-neutral-300 font-medium">Mata</span>
+              <span className="text-neutral-200 font-medium">Mata</span>
               <span className="text-[#06B6D4] text-[10px] font-semibold">Terlalu lama</span>
             </div>
 
             {/* Sub-Pill 2: HP (Oranye #F97316) */}
-            <div className="flex items-center gap-1.5 bg-[#F97316]/10 border border-[#F97316]/30 px-2 py-0.5 rounded-full">
+            <div className="flex items-center gap-1.5 bg-[#F97316]/15 border border-[#F97316]/35 px-2.5 py-0.5 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.25)]">
               <Smartphone className="w-3.5 h-3.5 text-[#F97316]" />
-              <span className="text-neutral-300 font-medium">HP</span>
+              <span className="text-neutral-200 font-medium">HP</span>
               <span className="text-[#F97316] text-[10px] font-semibold">5m</span>
             </div>
 
             {/* Sub-Pill 3: Air (Biru Toska / Cyan #06B6D4) */}
-            <div className="flex items-center gap-1.5 bg-[#06B6D4]/10 border border-[#06B6D4]/30 px-2 py-0.5 rounded-full">
+            <div className="flex items-center gap-1.5 bg-[#06B6D4]/15 border border-[#06B6D4]/35 px-2.5 py-0.5 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.25)]">
               <Droplets className="w-3.5 h-3.5 text-[#06B6D4]" />
-              <span className="text-neutral-300 font-medium">Air</span>
+              <span className="text-neutral-200 font-medium">Air</span>
               <span className="text-[#06B6D4] text-[10px] font-semibold">~1h</span>
             </div>
           </div>
@@ -232,25 +234,25 @@ export default function App() {
             className="w-full flex flex-col gap-3"
           >
             {/* Header: Logo, Nama, Jam Digital, dan Pin Toggle */}
-            <div className="w-full flex items-center justify-between border-b border-white/10 pb-2.5">
+            <div className="w-full flex items-center justify-between border-b border-white/10 pb-2.5 z-10">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 flex items-center justify-center text-[#8B5CF6]">
+                <div className="w-6 h-6 rounded-lg bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 flex items-center justify-center text-[#8B5CF6] shadow-[0_0_8px_rgba(139,92,246,0.3)]">
                   <Activity className="w-3.5 h-3.5" />
                 </div>
-                <div className="flex flex-col">
+                <div className="flex flex-col text-left">
                   <span className="text-xs font-bold text-white tracking-wide">NotchPulse</span>
                   <span className="text-[9px] text-neutral-400">Dynamic Island Overlay</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <span className="text-xs font-mono font-medium text-neutral-300">{currentTime}</span>
                 <button 
                   onClick={() => setPinned(!pinned)}
                   title={pinned ? "Pinned (Tetap terbuka)" : "Auto-collapse 1.5s aktif"}
                   className={`p-1.5 rounded-lg transition-colors border ${
                     pinned 
-                      ? "bg-[#8B5CF6]/20 text-[#8B5CF6] border-[#8B5CF6]/50 shadow-[0_0_10px_rgba(139,92,246,0.3)]" 
+                      ? "bg-[#8B5CF6]/25 text-[#8B5CF6] border-[#8B5CF6]/60 shadow-[0_0_12px_rgba(139,92,246,0.4)]" 
                       : "bg-white/5 text-neutral-400 border-white/10 hover:text-white"
                   }`}
                 >
@@ -260,14 +262,14 @@ export default function App() {
             </div>
 
             {/* Grid 2x2 Kartu Metrik Sesuai Desain */}
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-2.5 z-10">
               {/* Card 1: Kedip (Biru Toska / Cyan) */}
-              <div className="bg-[#121319] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#06B6D4]/30 transition-colors">
+              <div className="bg-[#101116] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#06B6D4]/40 transition-colors shadow-inner">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-neutral-300">Kedip</span>
                   <Eye className="w-3.5 h-3.5 text-[#06B6D4]" />
                 </div>
-                <div className="text-base font-extrabold text-white">{metrics.blinkRate}</div>
+                <div className="text-base font-extrabold text-white font-mono">{metrics.blinkRate}</div>
                 <div className="flex items-center gap-1 text-[10px] text-[#22C55E] font-medium">
                   <span>▲</span>
                   <span>Normal</span>
@@ -275,12 +277,12 @@ export default function App() {
               </div>
 
               {/* Card 2: Air (Biru Toska / Cyan) */}
-              <div className="bg-[#121319] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#06B6D4]/30 transition-colors">
+              <div className="bg-[#101116] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#06B6D4]/40 transition-colors shadow-inner">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-neutral-300">Air</span>
                   <Droplets className="w-3.5 h-3.5 text-[#06B6D4]" />
                 </div>
-                <div className="text-base font-extrabold text-white">{metrics.hydration}</div>
+                <div className="text-base font-extrabold text-white font-mono">{metrics.hydration}</div>
                 <div className="flex items-center gap-1 text-[10px] text-[#22C55E] font-medium">
                   <span>▲</span>
                   <span>Baik</span>
@@ -288,12 +290,12 @@ export default function App() {
               </div>
 
               {/* Card 3: HP (Oranye #F97316) */}
-              <div className="bg-[#121319] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#F97316]/30 transition-colors">
+              <div className="bg-[#101116] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#F97316]/40 transition-colors shadow-inner">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-neutral-300">HP</span>
                   <Smartphone className="w-3.5 h-3.5 text-[#F97316]" />
                 </div>
-                <div className="text-base font-extrabold text-white">{metrics.phoneUsage}</div>
+                <div className="text-base font-extrabold text-white font-mono">{metrics.phoneUsage}</div>
                 <div className="flex items-center gap-1 text-[10px] text-[#F97316] font-medium">
                   <span>▲</span>
                   <span>Terlalu lama</span>
@@ -301,12 +303,12 @@ export default function App() {
               </div>
 
               {/* Card 4: Layar (Ungu #8B5CF6) */}
-              <div className="bg-[#121319] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#8B5CF6]/30 transition-colors">
+              <div className="bg-[#101116] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#8B5CF6]/40 transition-colors shadow-inner">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-neutral-300">Layar</span>
                   <Monitor className="w-3.5 h-3.5 text-[#8B5CF6]" />
                 </div>
-                <div className="text-base font-extrabold text-white">{metrics.screenTime}</div>
+                <div className="text-base font-extrabold text-white font-mono">{metrics.screenTime}</div>
                 <div className="flex items-center gap-1 text-[10px] text-[#FBBF24] font-medium">
                   <span>▲</span>
                   <span>Perlu istirahat</span>
@@ -315,7 +317,7 @@ export default function App() {
             </div>
 
             {/* Quick Simulation / State Testing Footer */}
-            <div className="w-full flex items-center justify-between gap-1 pt-1 border-t border-white/10 text-[10px]">
+            <div className="w-full flex items-center justify-between gap-1.5 pt-1 border-t border-white/10 text-[10px] z-10">
               <button 
                 onClick={() => triggerSimulation("blink")}
                 className="flex-1 py-1 bg-[#06B6D4]/15 hover:bg-[#06B6D4]/30 border border-[#06B6D4]/30 rounded-lg text-[#06B6D4] font-medium transition-colors"
@@ -342,7 +344,7 @@ export default function App() {
               </button>
               <button 
                 onClick={resetToIdle}
-                className="px-2 py-1 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-neutral-300 transition-colors flex items-center gap-1"
+                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-neutral-300 transition-colors flex items-center gap-1"
                 title="Kembali ke State Idle"
               >
                 <RotateCcw className="w-3 h-3" />

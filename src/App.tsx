@@ -389,7 +389,8 @@ export default function App() {
             <div className="min-w-0 flex-1 px-3">
               {activeCategory === "phone" ? (
                 <div>
-                  <p className="font-display text-[11.5px] font-black leading-tight text-[#f97316] tracking-wide truncate">
+                  <p className={`font-display text-[11.5px] font-black leading-tight ${severityStyle.text} tracking-wide truncate flex items-center gap-1`}>
+                    <span>{severityStyle.icon}</span>
                     HP Terlalu Lama!
                   </p>
                   <p className="truncate text-[9px] font-semibold text-neutral-300">
@@ -398,7 +399,8 @@ export default function App() {
                 </div>
               ) : activeCategory === "blink" ? (
                 <div>
-                  <p className="font-display text-[11.5px] font-black leading-tight text-[#06b6d4] tracking-wide truncate">
+                  <p className={`font-display text-[11.5px] font-black leading-tight ${severityStyle.text} tracking-wide truncate flex items-center gap-1`}>
+                    <span>{severityStyle.icon}</span>
                     Kedip Matamu!
                   </p>
                   <p className="truncate text-[9px] font-semibold text-neutral-300">
@@ -407,7 +409,8 @@ export default function App() {
                 </div>
               ) : activeCategory === "hydration" ? (
                 <div>
-                  <p className="font-display text-[11.5px] font-black leading-tight text-[#38bdf8] tracking-wide truncate">
+                  <p className={`font-display text-[11.5px] font-black leading-tight ${severityStyle.text} tracking-wide truncate flex items-center gap-1`}>
+                    <span>{severityStyle.icon}</span>
                     Waktunya Minum Air!
                   </p>
                   <p className="truncate text-[9px] font-semibold text-neutral-300">
@@ -416,7 +419,8 @@ export default function App() {
                 </div>
               ) : activeCategory === "screentime" ? (
                 <div>
-                  <p className="font-display text-[11.5px] font-black leading-tight text-[#c084fc] tracking-wide truncate">
+                  <p className={`font-display text-[11.5px] font-black leading-tight ${severityStyle.text} tracking-wide truncate flex items-center gap-1`}>
+                    <span>{severityStyle.icon}</span>
                     Aturan 20-20-20!
                   </p>
                   <p className="truncate text-[9px] font-semibold text-neutral-300">
@@ -435,8 +439,9 @@ export default function App() {
               )}
             </div>
 
-            {/* Kanan: Badge Metrik Aktif dengan Margin Aman dari Lengkungan */}
-            <div className="shrink-0 flex items-center gap-1.5">
+            {/* Kanan: Badge Metrik Aktif + Why Button */}
+            <div className="shrink-0 flex items-center gap-2">
+              {/* Metric Badge */}
               {activeCategory === "phone" ? (
                 <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#f97316]/50 bg-[#f97316]/25 shadow-[0_0_14px_rgba(249,115,22,0.45)]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] animate-pulse" />
@@ -458,6 +463,36 @@ export default function App() {
                   <span className="text-[#c084fc] text-[10.5px] font-mono font-black">{metrics.screenTime}</span>
                 </div>
               )}
+              
+              {/* Why Button untuk expand reasoning */}
+              {alertReasoning && (
+                <button
+                  onClick={() => setReasoningExpanded(!reasoningExpanded)}
+                  className={`shrink-0 px-2 py-1 rounded-md border transition-all duration-200 text-[10px] font-bold ${
+                    reasoningExpanded
+                      ? `${severityStyle.border} ${severityStyle.bg} ${severityStyle.text}`
+                      : "border-neutral-600/50 bg-neutral-900/50 text-neutral-400 hover:border-neutral-500/70 hover:bg-neutral-800/70"
+                  }`}
+                  title="Lihat penjelasan keputusan adaptif"
+                >
+                  {reasoningExpanded ? "✕" : "Why?"}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Reasoning Panel Expansion (Phase 4 Explainability) */}
+        {widgetState === "alert" && reasoningExpanded && alertReasoning && (
+          <div className="w-full px-4 pb-2 z-20 animate-fade-in">
+            <div className={`p-2.5 rounded-lg border ${severityStyle.border} ${severityStyle.bg} text-[10px] space-y-1`}>
+              <div className="flex items-center justify-between font-bold">
+                <span className={severityStyle.text}>LOGIKA KEPUTUSAN</span>
+                <span className="text-[9px] text-neutral-400">Baseline Adaptif 7-Hari</span>
+              </div>
+              <div className="font-mono text-neutral-300 text-[9px] whitespace-pre-wrap leading-relaxed">
+                {alertReasoning}
+              </div>
             </div>
           </div>
         )}

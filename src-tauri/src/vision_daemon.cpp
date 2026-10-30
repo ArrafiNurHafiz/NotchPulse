@@ -456,11 +456,15 @@ int main() {
         std::string severity = "info";
         std::string alert_message = "Fokus Optimal";
 
-        // Phone distraction thresholds (instantaneous trigger for testing)
-        if (total_phone_distraction_sec >= 1.0) {
+        // Phone distraction thresholds: Warning 8s, Critical 16s (berbasis continuous_phone_sec)
+        if (continuous_phone_sec >= 16.0) {
             current_alert = "phone";
             severity = "critical";
-            alert_message = "HP terdeteksi! Segera fokus kembali.";
+            alert_message = "HP terlalu lama! Segera letakkan dan fokus.";
+        } else if (continuous_phone_sec >= 8.0) {
+            current_alert = "phone";
+            severity = "warning";
+            alert_message = "HP terdeteksi. Selesaikan urusan lalu fokus.";
         }
 
         // Blink fatigue (only if not already alerted)

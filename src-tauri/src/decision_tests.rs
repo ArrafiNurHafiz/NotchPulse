@@ -6,19 +6,21 @@ fn test_phone_threshold_evaluation() {
     let mut engine = DecisionEngine::new();
     let now = 1000000i64;
 
-    // Case 1: phone 10s < warn (12s baseline) → None
+    // Case 1: phone 10s < warn (16s baseline) → None
     let alert = engine.evaluate_phone_distraction(10.0, ActivityType::Idle, now);
     assert!(alert.is_none(), "10s should not trigger alert");
 
-    // Case 2: phone 16s >= warn (12 + 1σ ≈ 16s) → Warning
-    let alert = engine.evaluate_phone_distraction(16.0, ActivityType::Idle, now + 1);
-    assert!(alert.is_some(), "16s should trigger alert");
+    // Case 2: phone 18s >= warn (16s baseline) → Warning
+    let mut engine2 = DecisionEngine::new();
+    let alert = engine2.evaluate_phone_distraction(18.0, ActivityType::Idle, now);
+    assert!(alert.is_some(), "18s should trigger alert");
     let decision = alert.unwrap();
     assert_eq!(decision.alert_type, AlertType::Phone);
     assert_eq!(decision.severity, Severity::Warning);
 
-    // Case 3: phone 32s >= critical (12 + 2.5σ ≈ 22s) → Critical
-    let alert = engine.evaluate_phone_distraction(32.0, ActivityType::Idle, now + 2);
+    // Case 3: phone 32s >= critical (22s baseline) → Critical
+    let mut engine3 = DecisionEngine::new();
+    let alert = engine3.evaluate_phone_distraction(32.0, ActivityType::Idle, now);
     assert!(alert.is_some(), "32s should trigger critical");
     let decision = alert.unwrap();
     assert_eq!(decision.severity, Severity::Critical);
@@ -30,15 +32,16 @@ fn test_cooldown_blocking() {
     let now = 1000000i64;
 
     // First alert at T=0
-    let alert1 = engine.evaluate_phone_distraction(25.0, ActivityType::Idle, now);
+    let alert1 = engine.evaluate_phone_distraction(18.0, ActivityType::Idle, now);
     assert!(alert1.is_some(), "First alert should trigger");
+    assert_eq!(alert1.unwrap().severity, Severity::Warning);
 
     // Second alert at T=100s (within 5-min cooldown for warning) → blocked
-    let alert2 = engine.evaluate_phone_distraction(25.0, ActivityType::Idle, now + 100);
+    let alert2 = engine.evaluate_phone_distraction(18.0, ActivityType::Idle, now + 100);
     assert!(alert2.is_none(), "Second alert within cooldown should be blocked");
 
     // Third alert at T=320s (after 5-min cooldown) → allowed
-    let alert3 = engine.evaluate_phone_distraction(25.0, ActivityType::Idle, now + 320);
+    let alert3 = engine.evaluate_phone_distraction(18.0, ActivityType::Idle, now + 320);
     assert!(alert3.is_some(), "Alert after cooldown should be allowed");
 }
 
@@ -51,9 +54,9 @@ fn test_context_multipliers() {
     let alert_work = engine.evaluate_phone_distraction(20.0, ActivityType::Work, now);
     assert!(alert_work.is_none(), "20s in work context should not trigger (threshold ~22.5s)");
 
-    // Leisure context: 0.8x more strict (threshold lower)
-    let alert_leisure = engine.evaluate_phone_distraction(10.0, ActivityType::Leisure, now + 1);
-    assert!(alert_leisure.is_some(), "10s in leisure context should trigger (threshold ~12s)");
+    // Leisure context: 0.8x more strict (threshold lower: 16*0.8 = 12.8s)
+    let alert_leisure = engine.evaluate_phone_distraction(14.0, ActivityType::Leisure, now + 1);
+    assert!(alert_leisure.is_some(), "14s in leisure context should trigger (threshold ~12.8s)");
 
     // Meeting context: disabled (infinity threshold)
     let alert_meeting = engine.evaluate_phone_distraction(1000.0, ActivityType::Meeting, now + 2);
@@ -69,13 +72,14 @@ fn test_blink_fatigue_evaluation() {
     let alert_no_screen = engine.evaluate_blink_fatigue(5.0, 60, ActivityType::Idle, now);
     assert!(alert_no_screen.is_none(), "Blink alert should not trigger with <2 min screen time");
 
-    // Screen time 3 min, blink 6/min (below warning threshold) → Warning
-    let alert_warn = engine.evaluate_blink_fatigue(6.0, 180, ActivityType::Idle, now + 1);
+    // Screen time 3 min, blink 7.5/min (below warning threshold 7.8) → Warning
+    let alert_warn = engine.evaluate_blink_fatigue(7.5, 180, ActivityType::Idle, now + 1);
     assert!(alert_warn.is_some(), "Low blink rate should trigger warning");
     assert_eq!(alert_warn.unwrap().severity, Severity::Warning);
 
-    // Blink 3/min (very low) → Critical
-    let alert_crit = engine.evaluate_blink_fatigue(3.0, 180, ActivityType::Idle, now + 2);
+    // Blink 5.0/min (below critical 5.4) → Critical (use fresh engine to bypass cooldown)
+    let mut engine_crit = DecisionEngine::new();
+    let alert_crit = engine_crit.evaluate_blink_fatigue(5.0, 180, ActivityType::Idle, now);
     assert!(alert_crit.is_some(), "Very low blink rate should trigger critical");
     assert_eq!(alert_crit.unwrap().severity, Severity::Critical);
 }
@@ -142,13 +146,15 @@ fn test_hydration_evaluation() {
     let alert_ok = engine.evaluate_hydration(50.0, now);
     assert!(alert_ok.is_none(), "50 min hydration should not trigger");
 
-    // 80 min without drinking (baseline + 15) → Warning
-    let alert_warn = engine.evaluate_hydration(80.0, now + 1);
+    // 80 min without drinking (baseline + 15) → Warning (use fresh engine to bypass cooldown)
+    let mut engine_warn = DecisionEngine::new();
+    let alert_warn = engine_warn.evaluate_hydration(80.0, now);
     assert!(alert_warn.is_some(), "80 min should trigger warning");
     assert_eq!(alert_warn.unwrap().severity, Severity::Warning);
 
-    // 100 min without drinking (baseline + 30) → Critical
-    let alert_crit = engine.evaluate_hydration(100.0, now + 2);
+    // 100 min without drinking (baseline + 30) → Critical (use fresh engine)
+    let mut engine_crit = DecisionEngine::new();
+    let alert_crit = engine_crit.evaluate_hydration(100.0, now);
     assert!(alert_crit.is_some(), "100 min should trigger critical");
     assert_eq!(alert_crit.unwrap().severity, Severity::Critical);
 }

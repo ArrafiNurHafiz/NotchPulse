@@ -67,7 +67,7 @@ export default function App() {
   useEffect(() => {
     let bounds = { x: 180.0, y: 0.0, width: 280.0, height: 56.0 };
     if (widgetState === "alert") {
-      bounds = { x: 130.0, y: 0.0, width: 380.0, height: 48.0 };
+      bounds = { x: 115.0, y: 0.0, width: 410.0, height: 56.0 };
     } else if (widgetState === "expanded") {
       bounds = { x: 115.0, y: 0.0, width: 410.0, height: 255.0 };
     }
@@ -188,7 +188,7 @@ export default function App() {
           widgetState === "idle"
             ? "island-shell-idle h-14 w-[280px] rounded-full justify-center"
             : widgetState === "alert"
-              ? "island-shell-alert h-12 w-[380px] rounded-full px-4 py-1.5 justify-center"
+              ? "island-shell-alert h-14 w-[410px] rounded-full px-6 py-2 justify-center"
               : "island-shell-expanded w-[410px] h-auto rounded-[2.2rem] px-6 pt-4 pb-4.5"
         }`}
       >
@@ -225,9 +225,9 @@ export default function App() {
         {/* 2. STATE: ALERT (Pill Meluas dengan 3 Sub-Pill Warna-Warni)         */}
         {/* =================================================================== */}
         {widgetState === "alert" && (
-          <div className="w-full flex items-center justify-between gap-1.5 text-[11px] z-10">
+          <div className="w-full flex items-center justify-between gap-2 text-[11px] z-10">
             {/* Sub-Pill 1: Mata (Biru Toska / Cyan) */}
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-[0_0_8px_rgba(6,182,212,0.25)] flex-1 justify-center transition-all ${
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-[0_0_8px_rgba(6,182,212,0.25)] flex-1 justify-center transition-all ${
               activeCategory === "blink" ? "bg-[#06B6D4]/30 border-[#06B6D4]" : "bg-[#06B6D4]/15 border-[#06B6D4]/35"
             }`}>
               <Eye className="w-3.5 h-3.5 text-[#06B6D4] shrink-0" />
@@ -236,7 +236,7 @@ export default function App() {
             </div>
 
             {/* Sub-Pill 2: HP (Oranye) */}
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-[0_0_8px_rgba(249,115,22,0.25)] flex-1 justify-center transition-all ${
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-[0_0_8px_rgba(249,115,22,0.25)] flex-1 justify-center transition-all ${
               activeCategory === "phone" ? "bg-[#F97316]/30 border-[#F97316]" : "bg-[#F97316]/15 border-[#F97316]/35"
             }`}>
               <Timer className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
@@ -245,7 +245,7 @@ export default function App() {
             </div>
 
             {/* Sub-Pill 3: Air (Biru Langit) */}
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-[0_0_8px_rgba(56,189,248,0.25)] flex-1 justify-center transition-all ${
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-[0_0_8px_rgba(56,189,248,0.25)] flex-1 justify-center transition-all ${
               activeCategory === "hydration" ? "bg-[#38bdf8]/30 border-[#38bdf8]" : "bg-[#38bdf8]/15 border-[#38bdf8]/35"
             }`}>
               <Droplets className="w-3.5 h-3.5 text-[#38bdf8] shrink-0" />

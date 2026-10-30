@@ -141,6 +141,30 @@ export default function App() {
     };
   }, [pinned]);
 
+  // Auto-dismiss alert berdasarkan severity (Phase 4)
+  useEffect(() => {
+    if (widgetState !== "alert") return;
+
+    let dismissTimeout: number | null = null;
+    
+    if (alertSeverity === "info") {
+      dismissTimeout = window.setTimeout(() => {
+        setWidgetState("idle");
+        setActiveCategory("none");
+      }, 5000); // 5s untuk info
+    } else if (alertSeverity === "warning") {
+      dismissTimeout = window.setTimeout(() => {
+        setWidgetState("idle");
+        setActiveCategory("none");
+      }, 10000); // 10s untuk warning
+    }
+    // Critical: tidak auto-dismiss (persistent)
+
+    return () => {
+      if (dismissTimeout) window.clearTimeout(dismissTimeout);
+    };
+  }, [widgetState, alertSeverity]);
+
   // Auto-collapse dengan debounce 3 detik saat mouse meninggalkan pulau (jika tidak di-pin)
   const handleMouseEnter = () => {
     if (collapseTimerRef.current) {
@@ -356,7 +380,9 @@ export default function App() {
         {/* =================================================================== */}
         {widgetState === "alert" && (
           <div 
-            className="w-full h-full flex items-center justify-between z-10"
+            className={`w-full h-full flex items-center justify-between z-10 ${
+              alertSeverity === "critical" ? "animate-shake" : ""
+            }`}
             style={{ paddingLeft: "16px", paddingRight: "26px" }}
           >
             {/* Kiri: Maskot Jelly Pulse Besar 3D dengan Animasi Poke */}

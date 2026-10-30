@@ -134,6 +134,17 @@ html, body, #root {
   100% { transform: scale(1); }
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
+  20%, 40%, 60%, 80% { transform: translateX(3px); }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 .animate-breathe {
   animation: breathe 3.2s ease-in-out infinite;
 }
@@ -148,4 +159,12 @@ html, body, #root {
 
 .animate-jelly-poke {
   animation: jellyPoke 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
 }

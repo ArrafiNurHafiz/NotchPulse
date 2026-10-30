@@ -30,6 +30,9 @@ interface TelemetrySnapshot {
   hydration_count: number;
   phone_distraction_seconds: number;
   current_alert: string;
+  severity?: "info" | "warning" | "critical";
+  context_activity?: string;
+  reasoning?: string;
 }
 
 export default function App() {
@@ -40,6 +43,9 @@ export default function App() {
   const [breakTimerActive, setBreakTimerActive] = useState(false);
   const [breakTimerCountdown, setBreakTimerCountdown] = useState(20);
   const [mascotPokeActive, setMascotPokeActive] = useState(false);
+  const [alertSeverity, setAlertSeverity] = useState<"info" | "warning" | "critical">("info");
+  const [alertReasoning, setAlertReasoning] = useState<string>("");
+  const [reasoningExpanded, setReasoningExpanded] = useState(false);
   const collapseTimerRef = useRef<number | null>(null);
   const breakIntervalRef = useRef<number | null>(null);
 

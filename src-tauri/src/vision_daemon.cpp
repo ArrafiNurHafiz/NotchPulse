@@ -111,7 +111,7 @@ std::vector<Detection> postprocess_yolo(const cv::Mat& output, float conf_thresh
         int target_classes[] = {67, 39, 41, 40, 45};
         for (int cls : target_classes) {
             float conf = scores[cls];
-            float threshold = (cls == 67) ? 0.22f : 0.16f;
+            float threshold = (cls == 67) ? 0.05f : 0.16f;
             if (conf >= threshold) {
                 int left = static_cast<int>((cx - 0.5f * w) * x_factor);
                 int top = static_cast<int>((cy - 0.5f * h) * y_factor);
@@ -243,12 +243,13 @@ void yolo_worker(std::atomic<cv::Mat*>& shared_frame_ptr, std::atomic<ObjectDete
         std::vector<cv::Mat> yolo_outputs;
         yolo_net.forward(yolo_outputs, yolo_net.getUnconnectedOutLayersNames());
 
-        auto detections = postprocess_yolo(yolo_outputs[0], 0.16f, 0.45f, frame.cols, frame.rows);
+        auto detections = postprocess_yolo(yolo_outputs[0], 0.08f, 0.45f, frame.cols, frame.rows);
 
         ObjectDetections new_state;
         const FaceState* face_state = face_state_ptr.load();
 
         for (const auto& det : detections) {
+            std::cout << "[DEBUG YOLO] Detected class " << det.class_id << " conf=" << det.confidence << std::endl;
             if (det.class_id == 67) { // cell phone
                 new_state.phone_detected = true;
             } else if (det.class_id == 39 || det.class_id == 41 || det.class_id == 40 || det.class_id == 45) {
@@ -426,7 +427,7 @@ int main() {
             phone_missing_frames = 0;
         } else {
             phone_missing_frames++;
-            if (phone_missing_frames >= 3) {  // Reset setelah 3x frame miss (~1.5s YOLO loop)
+            if (phone_missing_frames >= 10) {  // Reset setelah 10x frame miss (~4.5s toleransi)
                 continuous_phone_sec = 0.0;
             }
         }
@@ -455,12 +456,12 @@ int main() {
         std::string severity = "info";
         std::string alert_message = "Fokus Optimal";
 
-        // Phone distraction thresholds (progressive)
-        if (continuous_phone_sec >= 30.0) {
+        // Phone distraction thresholds (progressive - fast response)
+        if (total_phone_distraction_sec >= 16.0) {
             current_alert = "phone";
             severity = "critical";
             alert_message = "HP terlalu lama! Produktivitas menurun.";
-        } else if (continuous_phone_sec >= 15.0) {
+        } else if (total_phone_distraction_sec >= 8.0) {
             current_alert = "phone";
             severity = "warning";
             alert_message = "HP terdeteksi. Cek notifikasi sebentar lalu fokus.";

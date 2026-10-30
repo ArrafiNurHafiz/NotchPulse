@@ -107,13 +107,14 @@ export default function App() {
       .catch(() => {});
 
     listen<EventPayload>("optihabit://event", (event) => {
+      console.log("[DEBUG] Received optihabit://event:", event.payload);
       const type = event.payload.alert_type.toLowerCase();
       if (type !== "idle" && type !== "none") {
-        setWidgetState(prev => (prev === "expanded" || pinned) ? prev : "alert");
         setActiveCategory(type as AlertCategory);
+        setWidgetState("alert");  // Force alert state immediately, no conditional
       } else {
-        setWidgetState(prev => (prev === "expanded" || pinned) ? prev : "idle");
         setActiveCategory("none");
+        setWidgetState(pinned ? "expanded" : "idle");  // Only force idle if not pinned
       }
     }).then(unsub => { unlistenEvent = unsub; });
 

@@ -71,7 +71,7 @@ export default function App() {
     if (widgetState === "alert") {
       bounds = { x: 120.0, y: 0.0, width: 400.0, height: 56.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 115.0, y: 0.0, width: 410.0, height: 265.0 };
+      bounds = { x: 100.0, y: 0.0, width: 430.0, height: 340.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -528,7 +528,7 @@ export default function App() {
         {widgetState === "expanded" && (
           <div 
             onClick={(e) => e.stopPropagation()} 
-            className="animate-pop-in flex flex-col w-full max-w-[380px] mx-auto gap-4"
+            className="animate-pop-in flex flex-col w-full max-w-[400px] mx-auto gap-5 px-2"
           >
             {/* Header: Premium Branding + Better Typography */}
             <div className="flex items-center gap-3.5">
@@ -578,7 +578,7 @@ export default function App() {
             </div>
 
             {/* Bento Grid 2x2 Doppelrand Glass Cards (Interaktif Click & Hover) */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {/* Card 1: Kedip (Emerald Mint Glow) */}
               <div 
                 onClick={() => triggerSimulation("blink")}

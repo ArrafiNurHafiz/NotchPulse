@@ -252,26 +252,19 @@ void yolo_worker(std::atomic<cv::Mat*>& shared_frame_ptr, std::atomic<ObjectDete
             std::cout << "[DEBUG YOLO] Detected class " << det.class_id << " conf=" << det.confidence << std::endl;
             if (det.class_id == 67) { // cell phone
                 new_state.phone_detected = true;
-            } else if (det.class_id == 39 || det.class_id == 41 || det.class_id == 40 || det.class_id == 45) {
-                if (face_state && face_state->presence) {
-                    cv::Rect lower_face_region;
-                    int lower_y = face_state->face_box.y + static_cast<int>(face_state->face_box.height * 0.45);
-                    int lower_h = static_cast<int>(face_state->face_box.height * 0.85);
-                    int lower_x = std::max(0, face_state->face_box.x - static_cast<int>(face_state->face_box.width * 0.15));
-                    int lower_w = std::min(frame.cols - lower_x, static_cast<int>(face_state->face_box.width * 1.3));
-                    lower_face_region = cv::Rect(lower_x, std::min(frame.rows - 1, lower_y), lower_w, std::min(frame.rows - lower_y, lower_h));
+            } else if (det.class_id == 39 || det.class_id == 41) { // 39: bottle, 41: cup only (buang wine glass 40 & bowl 45)
+                if (face_state && face_state->presence && det.confidence >= 0.20f) { // Tingkatkan confidence threshold ke 20%
+                    // Bounding box mulut/dagu yang lebih akurat
+                    cv::Rect mouth_region;
+                    int mouth_y = face_state->face_box.y + static_cast<int>(face_state->face_box.height * 0.60);
+                    int mouth_h = static_cast<int>(face_state->face_box.height * 0.50);
+                    int mouth_x = face_state->face_box.x;
+                    int mouth_w = face_state->face_box.width;
+                    mouth_region = cv::Rect(mouth_x, std::min(frame.rows - 1, mouth_y), mouth_w, std::min(frame.rows - mouth_y, mouth_h));
 
-                    cv::Rect intersection = det.box & lower_face_region;
-                    int obj_center_x = det.box.x + det.box.width / 2;
-                    int obj_center_y = det.box.y + det.box.height / 2;
-                    int face_center_x = face_state->face_box.x + face_state->face_box.width / 2;
-                    int face_center_y = face_state->face_box.y + face_state->face_box.height / 2;
-
-                    bool overlap = intersection.area() > 0;
-                    bool nearby = (std::abs(obj_center_x - face_center_x) < face_state->face_box.width * 0.8) &&
-                                  (obj_center_y > face_state->face_box.y && obj_center_y < face_state->face_box.y + face_state->face_box.height * 1.5);
-
-                    if (overlap || nearby) {
+                    cv::Rect intersection = det.box & mouth_region;
+                    // Hanya valid jika botol/cangkir benar-benar overlap dengan area mulut
+                    if (intersection.area() > (mouth_region.area() * 0.15)) {
                         new_state.drinking_action = true;
                     }
                 }
@@ -413,11 +406,17 @@ int main() {
 
         face_state_for_yolo = face_state_ptr; // Share for YOLO worker
 
-        // Update screen time
+        // Update screen time dengan toleransi absence (jangan reset agresif)
+        static int64_t face_missing_time = 0;
         if (face_state_ptr->presence) {
             screen_time_seconds += static_cast<int64_t>(dt + 0.5);
+            face_missing_time = 0;
         } else {
-            screen_time_seconds = 0;
+            face_missing_time += static_cast<int64_t>(dt + 0.5);
+            // Hanya reset jika wajah hilang > 60 detik (user pergi dari meja)
+            if (face_missing_time >= 60) {
+                screen_time_seconds = 0;
+            }
         }
 
         // Update phone distraction dengan debounce (toleransi 2 frame YOLO miss)
@@ -468,41 +467,44 @@ int main() {
         }
 
         // Blink fatigue (only if not already alerted)
+        // Normal blink rate: 12-20 per minute. Warning < 12/min, Critical < 8/min
         if (current_alert == "idle" && face_state_ptr->presence && screen_time_seconds > 120) {
-            if (blink_rate < 5) {
+            if (blink_rate < 8) {
                 current_alert = "blink";
                 severity = "critical";
                 alert_message = "Mata sangat lelah! Istirahat 20 detik sekarang.";
-            } else if (blink_rate < 8) {
+            } else if (blink_rate < 12) {
                 current_alert = "blink";
                 severity = "warning";
                 alert_message = "Mata mulai lelah. Berkedip lebih banyak.";
             }
         }
 
-        // Screen time (only if not already alerted)
+        // Screen time (20-20-20 rule: every 20 min, take 20s break at 20ft distance)
+        // Only if not already alerted
         if (current_alert == "idle") {
-            if (screen_time_seconds >= 3600) {
+            if (screen_time_seconds >= 2400) {  // 40 minutes critical
                 current_alert = "screentime";
                 severity = "critical";
-                alert_message = "1 jam layar! Istirahat 20 detik jauh dari layar.";
-            } else if (screen_time_seconds >= 2700) {
+                alert_message = "40 menit layar! Istirahat 20 detik jauh dari layar sekarang.";
+            } else if (screen_time_seconds >= 1200) {  // 20 minutes warning
                 current_alert = "screentime";
                 severity = "warning";
-                alert_message = "45 menit layar. Rencanakan break 20 detik.";
+                alert_message = "20 menit layar. Istirahat 20 detik jauh dari layar.";
             }
         }
 
         // Hydration (only if not already alerted)
+        // Rekomendasi medis: minum air setiap 45-60 menit
         if (current_alert == "idle") {
-            if (last_hydration_sec_ago >= 5400) {
+            if (last_hydration_sec_ago >= 3600) {  // 60 menit critical
                 current_alert = "hydration";
                 severity = "critical";
-                alert_message = "90 menit tanpa minum! Minum sekarang.";
-            } else if (last_hydration_sec_ago >= 3600) {
+                alert_message = "1 jam tanpa minum! Minum sekarang untuk rehidrasi tubuh.";
+            } else if (last_hydration_sec_ago >= 2700) {  // 45 menit warning
                 current_alert = "hydration";
                 severity = "warning";
-                alert_message = "Sudah 1 jam. Waktunya minum air.";
+                alert_message = "Sudah 45 menit tidak minum. Ambil segelas air yuk! 💧";
             }
         }
 

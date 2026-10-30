@@ -107,6 +107,11 @@ export default function App() {
             setWidgetState("alert");  // Force alert state immediately
             if (data.severity) setAlertSeverity(data.severity as any);
             if (data.reasoning) setAlertReasoning(data.reasoning || "");
+          } else {
+            // Alert cleared — return to idle/pulse or expanded (if pinned)
+            console.log("[POLLING] Alert cleared, resetting to idle/expanded");
+            setActiveCategory("none");
+            setWidgetState(pinned ? "expanded" : "idle");
           }
         }
       } catch (err) {

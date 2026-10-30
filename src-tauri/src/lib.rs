@@ -224,20 +224,6 @@ pub fn run() {
                     std::thread::sleep(Duration::from_millis(500));
                     ticker += 1;
 
-                    // AUTO-SIMULATE phone alert every 30 ticks (15 seconds) for testing
-                    if ticker % 30 == 0 {
-                        let auto_alert = HabitEventPayload {
-                            alert_type: AlertType::Phone,
-                            title: "NotchPulse Auto-Test".into(),
-                            message: "HP terdeteksi (auto-simulated)".into(),
-                            timestamp_ms: ticker * 500,
-                        };
-                        let _ = handle.emit("optihabit://event", &auto_alert);
-                        if let Some(win) = handle.get_webview_window("island") {
-                            let _ = win.emit("optihabit://event", &auto_alert);
-                        }
-                    }
-
                     // Baca snapshot telemetri riil dari vision_daemon
                     if let Ok(content) = std::fs::read_to_string(vision_file) {
                         if let Ok(snap) = serde_json::from_str::<VisionSnapshot>(&content) {

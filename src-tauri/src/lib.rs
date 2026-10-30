@@ -1,5 +1,6 @@
 mod vision_engine;
 mod adaptive_thresholds;
+mod decision_engine;
 mod db;
 mod layer_shell;
 

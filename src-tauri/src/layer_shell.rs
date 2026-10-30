@@ -86,8 +86,8 @@ fn apply_region(gw: &impl IsA<gtk::Widget>, x: f64, y: f64, width: f64, height: 
             let full_region = gtk::cairo::Region::create_rectangle(&gtk::cairo::RectangleInt::new(
                 0,
                 0,
-                460,
-                280,
+                520,
+                450,
             ));
             gdk_window.input_shape_combine_region(&full_region, 0, 0);
         }

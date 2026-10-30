@@ -65,11 +65,11 @@ export default function App() {
 
   // Update input region dinamis ke Wayland layer-shell
   useEffect(() => {
-    let bounds = { x: 140.0, y: 0.0, width: 180.0, height: 48.0 };
+    let bounds = { x: 170.0, y: 0.0, width: 180.0, height: 48.0 };
     if (widgetState === "alert") {
-      bounds = { x: 50.0, y: 0.0, width: 360.0, height: 48.0 };
+      bounds = { x: 80.0, y: 0.0, width: 360.0, height: 48.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 50.0, y: 0.0, width: 360.0, height: 260.0 };
+      bounds = { x: 85.0, y: 0.0, width: 350.0, height: 320.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -186,7 +186,7 @@ export default function App() {
             ? "island-shell-idle h-12 w-44 rounded-full px-3 py-1.5 justify-center"
             : widgetState === "alert"
               ? "island-shell-alert h-12 w-[360px] rounded-full px-3 py-1.5 justify-center"
-              : "island-shell-expanded w-[340px] rounded-[1.8rem] px-3.5 pt-3 pb-3.5"
+              : "island-shell-expanded w-[350px] rounded-[2rem] px-4 pt-3.5 pb-4"
         }`}
       >
         {/* =================================================================== */}
@@ -360,7 +360,7 @@ export default function App() {
             </div>
 
             {/* Quick Action Navigation Footer */}
-            <div className="flex items-center justify-between gap-1 pt-1">
+            <div className="mt-2 flex items-center justify-between gap-1 pt-0.5">
               <button 
                 onClick={() => triggerSimulation("blink")}
                 className="rounded-full border px-2.5 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/10 text-[#06b6d4]"

@@ -65,11 +65,11 @@ export default function App() {
 
   // Update input region dinamis ke backend Rust / Wayland layer-shell
   useEffect(() => {
-    let bounds = { x: 105.0, y: 0.0, width: 220.0, height: 44.0 };
+    let bounds = { x: 110.0, y: 0.0, width: 240.0, height: 48.0 };
     if (widgetState === "alert") {
-      bounds = { x: 40.0, y: 0.0, width: 350.0, height: 44.0 };
+      bounds = { x: 50.0, y: 0.0, width: 360.0, height: 48.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 10.0, y: 0.0, width: 410.0, height: 240.0 };
+      bounds = { x: 0.0, y: 0.0, width: 460.0, height: 320.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -175,12 +175,12 @@ export default function App() {
       {/* Dynamic Island Capsule - Top Bezel */}
       <div 
         onClick={handlePillClick}
-        className={`hardware-notch-shell cursor-pointer overflow-hidden flex flex-col items-center ${
+        className={`hardware-notch-shell cursor-pointer flex flex-col items-center ${
           widgetState === "idle"
-            ? "w-[220px] notch-glow-idle py-1.5 px-3.5"
+            ? "w-[240px] h-[48px] notch-glow-idle py-2 px-4 justify-center"
             : widgetState === "alert"
-              ? "w-[350px] notch-glow-alert py-1.5 px-3"
-              : "w-[410px] notch-glow-expanded p-3.5"
+              ? "w-[360px] h-[48px] notch-glow-alert py-2 px-3.5 justify-center"
+              : "w-[410px] min-h-[260px] notch-glow-expanded p-3.5"
         }`}
       >
         {/* Specular Highlight Line */}
@@ -189,20 +189,20 @@ export default function App() {
         {/* 1. STATE: IDLE (Lebar: 220px, Border/Glow: Hijau #22C55E)           */}
         {/* =================================================================== */}
         {widgetState === "idle" && (
-          <div className="w-full flex items-center justify-between z-10">
+          <div className="w-full flex items-center justify-between z-10 px-0.5">
             {/* Kiri: Ikon Daun / Fokus */}
             <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-[#22C55E]/20 flex items-center justify-center border border-[#22C55E]/40 shadow-[0_0_8px_rgba(34,197,94,0.4)]">
-                <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
+              <div className="w-4 h-4 rounded-full bg-[#22C55E]/20 flex items-center justify-center border border-[#22C55E]/40 shadow-[0_0_8px_rgba(34,197,94,0.4)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
               </div>
               <span className="text-xs font-semibold text-white tracking-wide">Fokus</span>
             </div>
 
-            {/* Tengah/Kanan: Skor 85 & Gelombang Audio Hijau */}
+            {/* Kanan: Skor & Gelombang Audio Hijau */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-medium text-neutral-300">Skor {metrics.focusScore}</span>
-              <div className="flex items-center gap-0.5 text-[#22C55E] drop-shadow-[0_0_6px_rgba(34,197,94,0.6)]">
-                <AudioWaveform className="w-4 h-4 animate-pulse" />
+              <div className="flex items-center text-[#22C55E] drop-shadow-[0_0_6px_rgba(34,197,94,0.6)]">
+                <AudioWaveform className="w-3.5 h-3.5 animate-pulse" />
               </div>
             </div>
           </div>

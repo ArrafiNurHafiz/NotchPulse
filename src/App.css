@@ -30,20 +30,17 @@ html, body, #root {
 /* Authentic Hardware Notch Contour (menempel presisi ke fisik bezel kamera) */
 .hardware-notch-shell {
   position: relative;
-  background: #000000;
-  border-bottom-left-radius: 22px;
-  border-bottom-right-radius: 22px;
+  background-color: #0b0c13 !important;
+  background: #0b0c13 !important;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
   border-top-left-radius: 0px;
   border-top-right-radius: 0px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-top: none;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.95),
-              0 0 1px 1px rgba(255, 255, 255, 0.05);
-  will-change: width, height, transform, box-shadow;
-  transition: width 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-              height 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-              padding 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.35s ease-out;
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.95);
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s ease-out;
 }
 
 /* Glow State sesuai Lembar Desain */

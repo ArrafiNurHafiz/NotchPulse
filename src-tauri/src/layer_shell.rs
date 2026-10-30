@@ -18,6 +18,7 @@ pub mod ffi {
         pub fn gtk_layer_set_namespace(window: *mut GtkWindow, name_space: *const c_char);
         pub fn gtk_layer_set_layer(window: *mut GtkWindow, layer: c_int);
         pub fn gtk_layer_set_anchor(window: *mut GtkWindow, edge: c_int, anchor: c_int);
+        pub fn gtk_layer_set_margin(window: *mut GtkWindow, edge: c_int, margin: c_int);
         pub fn gtk_layer_set_exclusive_zone(window: *mut GtkWindow, zone: c_int);
         pub fn gtk_layer_set_keyboard_mode(window: *mut GtkWindow, mode: c_int);
     }
@@ -50,6 +51,7 @@ pub fn setup_layer_shell(win: &WebviewWindow) -> bool {
         ffi::gtk_layer_set_namespace(ptr, b"notchpulse\0".as_ptr() as *const _);
         ffi::gtk_layer_set_layer(ptr, ffi::LAYER_OVERLAY);
         ffi::gtk_layer_set_anchor(ptr, ffi::EDGE_TOP, 1);
+        ffi::gtk_layer_set_margin(ptr, ffi::EDGE_TOP, 0);
         ffi::gtk_layer_set_exclusive_zone(ptr, -1);
         ffi::gtk_layer_set_keyboard_mode(ptr, ffi::KEYBOARD_NONE);
     }
@@ -76,6 +78,10 @@ pub fn setup_layer_shell(win: &WebviewWindow) -> bool {
 }
 
 fn apply_region(gw: &impl IsA<gtk::Widget>, x: f64, y: f64, width: f64, height: f64) {
+    if width >= 400.0 {
+        gw.input_shape_combine_region(None);
+        return;
+    }
     if let Some(gdk_window) = gw.window() {
         let region = gtk::cairo::Region::create_rectangle(&gtk::cairo::RectangleInt::new(
             x.floor() as i32,
@@ -96,5 +102,8 @@ pub fn update_input_region(win: &WebviewWindow, x: f64, y: f64, width: f64, heig
 
 #[tauri::command]
 pub fn update_notch_bounds(win: WebviewWindow, x: f64, y: f64, width: f64, height: f64) {
-    update_input_region(&win, x, y, width, height);
+    let win_clone = win.clone();
+    let _ = win.run_on_main_thread(move || {
+        update_input_region(&win_clone, x, y, width, height);
+    });
 }

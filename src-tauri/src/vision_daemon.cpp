@@ -144,7 +144,8 @@ std::vector<Detection> postprocess_yolo(const cv::Mat& output, float conf_thresh
 // ============================================================================
 
 void face_detection_worker(cv::VideoCapture& cap, std::atomic<FaceState*>& state_ptr,
-                           std::deque<int64_t>& blink_timestamps, std::atomic<bool>& eye_was_open) {
+                           std::deque<int64_t>& blink_timestamps, std::atomic<bool>& eye_was_open,
+                           std::atomic<cv::Mat*>& shared_frame_ptr) {
     cv::CascadeClassifier face_cascade("/usr/share/opencv5/haarcascades/haarcascade_frontalface_default.xml");
     cv::CascadeClassifier eye_cascade("/usr/share/opencv5/haarcascades/haarcascade_eye.xml");
     
@@ -155,6 +156,11 @@ void face_detection_worker(cv::VideoCapture& cap, std::atomic<FaceState*>& state
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
             continue;
         }
+
+        // Share frame untuk YOLO worker (atomic pointer swap)
+        cv::Mat* new_shared_frame = new cv::Mat(frame.clone());
+        cv::Mat* old_shared_frame = shared_frame_ptr.exchange(new_shared_frame);
+        if (old_shared_frame) delete old_shared_frame;
 
         cv::Mat gray;
         cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
@@ -217,20 +223,20 @@ void face_detection_worker(cv::VideoCapture& cap, std::atomic<FaceState*>& state
 // WORKER THREAD 2: MID-FREQ YOLO OBJECT DETECTION (450ms, NON-BLOCKING)
 // ============================================================================
 
-void yolo_worker(cv::VideoCapture& cap, std::atomic<ObjectDetections*>& state_ptr,
+void yolo_worker(std::atomic<cv::Mat*>& shared_frame_ptr, std::atomic<ObjectDetections*>& state_ptr,
                  std::atomic<const FaceState*>& face_state_ptr) {
     std::string onnx_path = "/home/arrafi/lomba/optihabit/src-tauri/yolov8n.onnx";
     cv::dnn::Net yolo_net = cv::dnn::readNetFromONNX(onnx_path);
     yolo_net.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
     yolo_net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
 
-    cv::Mat frame;
     while (g_running) {
-        cap >> frame;
-        if (frame.empty()) {
+        cv::Mat* frame_ptr = shared_frame_ptr.load();
+        if (!frame_ptr || frame_ptr->empty()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
             continue;
         }
+        cv::Mat frame = frame_ptr->clone();
 
         cv::Mat blob = cv::dnn::blobFromImage(frame, 1.0 / 255.0, cv::Size(640, 640), cv::Scalar(), true, false);
         yolo_net.setInput(blob);
@@ -371,17 +377,21 @@ int main() {
     int consecutive_drinking_ticks = 0;
     int64_t last_alert_time_phone = 0;
     int64_t last_alert_time_blink = 0;
+    int phone_missing_frames = 0;  // Debounce: toleransi 2 frame YOLO miss
 
     // Telemetry queue
     LockFreeQueue telemetry_queue;
+
+    // Shared frame pointer untuk multi-thread safety
+    std::atomic<cv::Mat*> shared_frame_ptr(nullptr);
 
     // Output path
     std::string out_path = "/home/arrafi/.hermes/cache/scratch/notchpulse_vision.json";
 
     // Start worker threads
     std::thread t_face(face_detection_worker, std::ref(cap), std::ref(face_state), 
-                       std::ref(blink_timestamps), std::ref(eye_was_open));
-    std::thread t_yolo(yolo_worker, std::ref(cap), std::ref(object_state), 
+                       std::ref(blink_timestamps), std::ref(eye_was_open), std::ref(shared_frame_ptr));
+    std::thread t_yolo(yolo_worker, std::ref(shared_frame_ptr), std::ref(object_state), 
                        std::ref(face_state_for_yolo));
     std::thread t_context(context_inference_worker, std::ref(telemetry_queue), std::ref(context_state));
 
@@ -409,12 +419,16 @@ int main() {
             screen_time_seconds = 0;
         }
 
-        // Update phone distraction
+        // Update phone distraction dengan debounce (toleransi 2 frame YOLO miss)
         if (object_state_ptr->phone_detected) {
             total_phone_distraction_sec += dt;
             continuous_phone_sec += dt;
+            phone_missing_frames = 0;
         } else {
-            continuous_phone_sec = 0.0;
+            phone_missing_frames++;
+            if (phone_missing_frames >= 3) {  // Reset setelah 3x frame miss (~1.5s YOLO loop)
+                continuous_phone_sec = 0.0;
+            }
         }
 
         // Track hydration with debounce
@@ -507,7 +521,7 @@ int main() {
         frame.screen_time_seconds = screen_time_seconds;
         frame.hydration_count = hydration_count;
         frame.last_hydration_sec_ago = last_hydration_sec_ago;
-        frame.phone_distraction_seconds = static_cast<int>(total_phone_distraction_sec);
+        frame.phone_distraction_seconds = static_cast<int>(continuous_phone_sec);  // Gunakan continuous, bukan total
         frame.focus_score = focus_score;
         frame.current_alert = current_alert;
         frame.severity = severity;

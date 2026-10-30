@@ -69,7 +69,7 @@ export default function App() {
     if (widgetState === "alert") {
       bounds = { x: 50.0, y: 0.0, width: 360.0, height: 48.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 65.0, y: 0.0, width: 330.0, height: 350.0 };
+      bounds = { x: 45.0, y: 0.0, width: 370.0, height: 390.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -100,7 +100,7 @@ export default function App() {
         setWidgetState(prev => prev === "expanded" ? "expanded" : "alert");
         setActiveCategory(type as AlertCategory);
       } else {
-        setWidgetState(prev => (prev === "expanded" || pinned) ? prev : "idle");
+        setWidgetState(prev => prev === "expanded" ? "expanded" : (pinned ? prev : "idle"));
         setActiveCategory("none");
       }
     }).then(unsub => { unlistenEvent = unsub; });
@@ -186,7 +186,7 @@ export default function App() {
             ? "island-shell-idle h-12 w-44 rounded-full px-3 py-1.5 justify-center"
             : widgetState === "alert"
               ? "island-shell-alert h-12 w-[360px] rounded-full px-3 py-1.5 justify-center"
-              : "island-shell-expanded h-[340px] w-[320px] rounded-[2rem] p-3.5"
+              : "island-shell-expanded min-h-[370px] w-[350px] rounded-[2.2rem] px-4 pt-3.5 pb-5"
         }`}
       >
         {/* =================================================================== */}
@@ -285,15 +285,15 @@ export default function App() {
             </div>
 
             {/* Grid 2x2 Stat Cards Sesuai Lovable Playful Island */}
-            <div className="mt-2 grid flex-1 grid-cols-2 gap-2">
+            <div className="mt-2.5 grid flex-1 grid-cols-2 gap-2.5">
               {/* Card 1: Kedip (Ok / Hijau) */}
               <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-neutral-400">Kedip</span>
                   <Eye className="h-3.5 w-3.5 text-[#22c55e]" />
                 </div>
-                <p className="font-display mt-1 text-lg font-extrabold leading-none text-white font-mono">{metrics.blinkRate}</p>
-                <div className="mt-1">
+                <p className="font-display my-1 text-base font-extrabold leading-none text-white font-mono">{metrics.blinkRate}</p>
+                <div>
                   <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]">
                     <TriangleAlert className="h-2.5 w-2.5" />
                     {metrics.blinkStatus}
@@ -307,8 +307,8 @@ export default function App() {
                   <span className="text-[10px] font-bold text-neutral-400">Air</span>
                   <Droplets className="h-3.5 w-3.5 text-[#eab308]" />
                 </div>
-                <p className="font-display mt-1 text-lg font-extrabold leading-none text-white font-mono">{metrics.hydration}</p>
-                <div className="mt-1">
+                <p className="font-display my-1 text-base font-extrabold leading-none text-white font-mono">{metrics.hydration}</p>
+                <div>
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${
                     metrics.hydrationStatus === "Baik" 
                       ? "border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]" 
@@ -326,8 +326,8 @@ export default function App() {
                   <span className="text-[10px] font-bold text-neutral-400">HP</span>
                   <Timer className="h-3.5 w-3.5 text-[#f97316]" />
                 </div>
-                <p className="font-display mt-1 text-lg font-extrabold leading-none text-white font-mono">{metrics.phoneUsage}</p>
-                <div className="mt-1">
+                <p className="font-display my-1 text-base font-extrabold leading-none text-white font-mono">{metrics.phoneUsage}</p>
+                <div>
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${
                     metrics.phoneStatus === "Aman" 
                       ? "border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]" 
@@ -345,8 +345,8 @@ export default function App() {
                   <span className="text-[10px] font-bold text-neutral-400">Layar</span>
                   <Monitor className="h-3.5 w-3.5 text-[#c084fc]" />
                 </div>
-                <p className="font-display mt-1 text-lg font-extrabold leading-none text-white font-mono">{metrics.screenTime}</p>
-                <div className="mt-1">
+                <p className="font-display my-1 text-base font-extrabold leading-none text-white font-mono">{metrics.screenTime}</p>
+                <div>
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${
                     metrics.screenStatus === "Aman" 
                       ? "border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]" 
@@ -360,28 +360,28 @@ export default function App() {
             </div>
 
             {/* Quick Action Navigation Footer */}
-            <div className="mt-2.5 flex items-center gap-1.5 pt-1">
+            <div className="mt-3 flex items-center justify-between gap-1.5 pt-0.5">
               <button 
                 onClick={() => triggerSimulation("blink")}
-                className="rounded-full border px-2.5 py-1 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/10 text-[#06b6d4]"
+                className="rounded-full border px-3 py-1.5 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/10 text-[#06b6d4]"
               >
                 Mata
               </button>
               <button 
                 onClick={() => triggerSimulation("phone")}
-                className="rounded-full border px-2.5 py-1 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#f97316]/40 bg-[#f97316]/10 text-[#f97316]"
+                className="rounded-full border px-3 py-1.5 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#f97316]/40 bg-[#f97316]/10 text-[#f97316]"
               >
                 HP
               </button>
               <button 
                 onClick={() => triggerSimulation("hydration")}
-                className="rounded-full border px-2.5 py-1 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#38bdf8]/40 bg-[#38bdf8]/10 text-[#38bdf8]"
+                className="rounded-full border px-3 py-1.5 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#38bdf8]/40 bg-[#38bdf8]/10 text-[#38bdf8]"
               >
                 Air
               </button>
               <button 
                 onClick={() => triggerSimulation("screentime")}
-                className="rounded-full border px-2.5 py-1 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#c084fc]/40 bg-[#c084fc]/10 text-[#c084fc]"
+                className="rounded-full border px-3 py-1.5 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#c084fc]/40 bg-[#c084fc]/10 text-[#c084fc]"
               >
                 Layar
               </button>
@@ -390,7 +390,7 @@ export default function App() {
                 className="ml-auto rounded-full border border-white/10 bg-white/5 p-1.5 hover:bg-white/15 transition-colors"
                 title="Reset ke mode Idle"
               >
-                <RefreshCcw className="h-3 w-3 text-neutral-300" />
+                <RefreshCcw className="h-3.5 w-3.5 text-neutral-300" />
               </button>
             </div>
           </div>

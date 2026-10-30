@@ -87,7 +87,7 @@ fn apply_region(gw: &impl IsA<gtk::Widget>, x: f64, y: f64, width: f64, height: 
                 0,
                 0,
                 460,
-                380,
+                400,
             ));
             gdk_window.input_shape_combine_region(&full_region, 0, 0);
         }

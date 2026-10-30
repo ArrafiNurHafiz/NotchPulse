@@ -116,11 +116,19 @@ export default function App() {
           // Only trigger state change after 3 stable polls (1.2s)
           if (debounce.stableCount >= 3) {
             if (currentAlertStr !== "idle" && currentAlertStr !== "none") {
-              console.log("[POLLING] ALERT STABLE! Setting state to 'alert'");
-              setActiveCategory(currentAlertStr as AlertCategory);
-              setWidgetState("alert");
-              if (data.severity) setAlertSeverity(data.severity as any);
-              if (data.reasoning) setAlertReasoning(data.reasoning || "");
+              // Hanya set ke alert jika state BUKAN expanded!
+              // Jika user sedang melihat dashboard, JANGAN ganggu dengan paksa kembali ke alert!
+              setWidgetState((prevState) => {
+                if (prevState === "expanded") {
+                  console.log("[POLLING] Alert detected but user viewing dashboard, preserving expanded state");
+                  return prevState;
+                }
+                console.log("[POLLING] ALERT STABLE! Setting state to 'alert'");
+                setActiveCategory(currentAlertStr as AlertCategory);
+                if (data.severity) setAlertSeverity(data.severity as any);
+                if (data.reasoning) setAlertReasoning(data.reasoning || "");
+                return "alert";
+              });
             } else {
               // Hanya reset ke idle jika sebelumnya sedang alert!
               // JANGAN paksa tutup jika user sedang membuka dashboard (expanded) secara manual!

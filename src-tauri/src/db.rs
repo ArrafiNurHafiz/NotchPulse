@@ -110,6 +110,21 @@ impl DatabaseManager {
             Ok(None)
         }
     }
+
+    // Tambah satu gelas air langsung (Quick Action)
+    pub fn add_hydration_log(&self, date: &str) -> Result<()> {
+        self.upsert_daily_metrics(date, 0, 0, 1, 0)
+    }
+
+    // Catat sesi break timer selesai
+    pub fn log_break_completed(&self, duration_sec: i32) -> Result<i64> {
+        self.log_event(None, "break_timer", duration_sec, "{}")
+    }
+
+    // Catat poke maskot interaktif
+    pub fn log_mascot_interaction(&self) -> Result<i64> {
+        self.log_event(None, "mascot_poke", 0, "{}")
+    }
 }
 
 #[cfg(test)]

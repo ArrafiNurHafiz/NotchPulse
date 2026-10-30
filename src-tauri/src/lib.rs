@@ -115,6 +115,46 @@ fn simulate_vision_trigger(
     Ok(format!("Trigger {} sukses", trigger_type))
 }
 
+#[tauri::command]
+fn log_water_intake(app: AppHandle, state: State<'_, Arc<AppState>>) -> Result<u32, String> {
+    let mut tel = state.telemetry.lock().map_err(|e| e.to_string())?;
+    tel.hydration_count += 1;
+    let new_count = tel.hydration_count;
+
+    if let Ok(db) = state.db.lock() {
+        let _ = db.add_hydration_log("2026-10-30");
+        let _ = db.log_event(None, "hydration_quick_action", 0, "{\"source\": \"notch_button\"}");
+    }
+
+    let alert = HabitEventPayload {
+        alert_type: AlertType::Hydration,
+        title: "Segar! 💧".into(),
+        message: format!("Gelas ke-{} tercatat. Tetap terhidrasi!", new_count),
+        timestamp_ms: 1000,
+    };
+
+    let _ = app.emit("optihabit://event", &alert);
+    let _ = app.emit("optihabit://telemetry", &*tel);
+
+    Ok(new_count)
+}
+
+#[tauri::command]
+fn log_mascot_poke(state: State<'_, Arc<AppState>>) -> Result<(), String> {
+    if let Ok(db) = state.db.lock() {
+        let _ = db.log_mascot_interaction();
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn log_break_done(duration_sec: i32, state: State<'_, Arc<AppState>>) -> Result<(), String> {
+    if let Ok(db) = state.db.lock() {
+        let _ = db.log_break_completed(duration_sec);
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let db_manager = DatabaseManager::new_in_memory().expect("Gagal inisialisasi basis data");
@@ -140,6 +180,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_current_telemetry,
             simulate_vision_trigger,
+            log_water_intake,
+            log_mascot_poke,
+            log_break_done,
             layer_shell::update_notch_bounds
         ])
         .setup(move |app| {

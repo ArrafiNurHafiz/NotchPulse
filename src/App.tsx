@@ -37,7 +37,11 @@ export default function App() {
   const [pinned, setPinned] = useState(true);
   const [activeCategory, setActiveCategory] = useState<AlertCategory>("none");
   const [currentTime, setCurrentTime] = useState("09:43");
+  const [breakTimerActive, setBreakTimerActive] = useState(false);
+  const [breakTimerCountdown, setBreakTimerCountdown] = useState(20);
+  const [mascotPokeActive, setMascotPokeActive] = useState(false);
   const collapseTimerRef = useRef<number | null>(null);
+  const breakIntervalRef = useRef<number | null>(null);
 
   // Data telemetri real-time optik
   const [metrics, setMetrics] = useState({
@@ -171,6 +175,67 @@ export default function App() {
     setWidgetState("idle");
   };
 
+  // Handler: Poke Maskot Interaktif
+  const handleMascotPoke = async () => {
+    setMascotPokeActive(true);
+    try {
+      await invoke("log_mascot_poke");
+    } catch {}
+    setTimeout(() => setMascotPokeActive(false), 600);
+  };
+
+  // Handler: Tambah Gelas Air Langsung
+  const handleAddWater = async () => {
+    try {
+      const newCount = await invoke<number>("log_water_intake");
+      setMetrics(prev => ({
+        ...prev,
+        hydration: `${newCount}x`
+      }));
+      // Tampilkan alert sukses sementara
+      setWidgetState("alert");
+      setActiveCategory("hydration");
+      setTimeout(() => {
+        setWidgetState("expanded");
+      }, 2000);
+    } catch {}
+  };
+
+  // Handler: Timer 20-20-20 Break
+  const handleStartBreak = () => {
+    if (breakTimerActive) {
+      // Stop timer
+      if (breakIntervalRef.current) clearInterval(breakIntervalRef.current);
+      setBreakTimerActive(false);
+      setBreakTimerCountdown(20);
+      invoke("log_break_done", { durationSec: 20 }).catch(() => {});
+    } else {
+      // Start timer
+      setBreakTimerActive(true);
+      setBreakTimerCountdown(20);
+      let countdown = 20;
+      if (breakIntervalRef.current) clearInterval(breakIntervalRef.current);
+      breakIntervalRef.current = window.setInterval(() => {
+        countdown--;
+        setBreakTimerCountdown(countdown);
+        if (countdown <= 0) {
+          clearInterval(breakIntervalRef.current!);
+          setBreakTimerActive(false);
+          invoke("log_break_done", { durationSec: 20 }).catch(() => {});
+          setWidgetState("alert");
+          setActiveCategory("screentime");
+        }
+      }, 1000);
+    }
+  };
+
+  // Cleanup break timer on unmount
+  useEffect(() => {
+    return () => {
+      if (breakIntervalRef.current) clearInterval(breakIntervalRef.current);
+    };
+  }, []);
+
   return (
     <div 
       className="w-full h-full flex flex-col items-center justify-start select-none pt-0.5"
@@ -200,18 +265,32 @@ export default function App() {
             className="w-full flex items-center justify-between z-10"
             style={{ paddingLeft: "20px", paddingRight: "32px" }}
           >
-            {/* Kiri: Maskot Jelly Pulse Lucu (Besar & Glossy) */}
-            <div className="flex items-center gap-2.5">
+            {/* Kiri: Maskot Jelly Pulse Lucu (Interaktif Klik / Poke) */}
+            <div 
+              className="flex items-center gap-2.5 cursor-pointer group"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMascotPoke();
+              }}
+              title="Klik untuk poke Pulse! ✨"
+            >
               <div className="relative flex items-center justify-center">
-                <div className="absolute w-9 h-9 bg-purple-500/35 rounded-full blur-md animate-soft-glow" />
+                <div className={`absolute w-9 h-9 rounded-full blur-md animate-soft-glow ${
+                  mascotPokeActive ? "bg-pink-400/60 scale-125" : "bg-purple-500/35"
+                } transition-all duration-300`} />
                 <img 
                   src={mascotImg} 
                   alt="Pulse Maskot Jelly" 
-                  className="w-10 h-10 object-contain relative z-10 animate-breathe drop-shadow-[0_0_12px_rgba(168,85,247,0.7)]" 
+                  className={`w-10 h-10 object-contain relative z-10 drop-shadow-[0_0_12px_rgba(168,85,247,0.7)] ${
+                    mascotPokeActive ? "animate-jelly-poke" : "animate-breathe"
+                  }`} 
                 />
+                {mascotPokeActive && (
+                  <span className="absolute -top-1 -right-1 text-[11px] animate-pop-in select-none">💖</span>
+                )}
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-black text-white tracking-wide font-display">Pulse</span>
+                <span className="text-sm font-black text-white tracking-wide font-display group-hover:text-pink-300 transition-colors">Pulse</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse" />
               </div>
             </div>
@@ -235,15 +314,29 @@ export default function App() {
             className="w-full h-full flex items-center justify-between z-10"
             style={{ paddingLeft: "16px", paddingRight: "26px" }}
           >
-            {/* Kiri: Maskot Jelly Pulse Besar 3D dengan Animasi */}
-            <div className="flex items-center gap-2 shrink-0">
+            {/* Kiri: Maskot Jelly Pulse Besar 3D dengan Animasi Poke */}
+            <div 
+              className="flex items-center gap-2 shrink-0 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMascotPoke();
+              }}
+              title="Klik untuk poke Pulse! 💖"
+            >
               <div className="relative flex items-center justify-center">
-                <div className="absolute w-10 h-10 bg-pink-500/35 rounded-full blur-md animate-soft-glow" />
+                <div className={`absolute w-10 h-10 rounded-full blur-md animate-soft-glow ${
+                  mascotPokeActive ? "bg-pink-400/60 scale-125" : "bg-pink-500/35"
+                } transition-all duration-300`} />
                 <img 
                   src={mascotImg} 
                   alt="Pulse Maskot" 
-                  className="w-11 h-11 object-contain relative z-10 animate-breathe drop-shadow-[0_0_14px_rgba(244,63,94,0.7)]" 
+                  className={`w-11 h-11 object-contain relative z-10 drop-shadow-[0_0_14px_rgba(244,63,94,0.7)] ${
+                    mascotPokeActive ? "animate-jelly-poke" : "animate-breathe"
+                  }`} 
                 />
+                {mascotPokeActive && (
+                  <span className="absolute -top-1 -right-1 text-[11px] animate-pop-in select-none">✨</span>
+                )}
               </div>
             </div>
 
@@ -298,7 +391,7 @@ export default function App() {
             </div>
 
             {/* Kanan: Badge Metrik Aktif dengan Margin Aman dari Lengkungan */}
-            <div className="shrink-0">
+            <div className="shrink-0 flex items-center gap-1.5">
               {activeCategory === "phone" ? (
                 <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#f97316]/50 bg-[#f97316]/25 shadow-[0_0_14px_rgba(249,115,22,0.45)]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] animate-pulse" />
@@ -332,15 +425,26 @@ export default function App() {
             onClick={(e) => e.stopPropagation()} 
             className="animate-pop-in flex flex-col w-full max-w-[370px] mx-auto gap-2.5"
           >
-            {/* Header: Maskot Pulse Lucu (Besar & Juicy), Title & Tagline, Jam, Pin Toggle */}
+            {/* Header: Maskot Pulse Lucu (Besar & Juicy, Interaktif Poke), Title & Tagline, Jam, Pin Toggle */}
             <div className="flex items-center gap-2.5 pb-0.5">
-              <div className="relative flex items-center justify-center shrink-0">
-                <div className="absolute w-12 h-12 bg-purple-500/35 rounded-full blur-lg animate-soft-glow" />
+              <div 
+                className="relative flex items-center justify-center shrink-0 cursor-pointer"
+                onClick={handleMascotPoke}
+                title="Klik untuk poke Pulse! 💖"
+              >
+                <div className={`absolute w-12 h-12 rounded-full blur-lg animate-soft-glow ${
+                  mascotPokeActive ? "bg-pink-400/60 scale-125" : "bg-purple-500/35"
+                } transition-all duration-300`} />
                 <img 
                   src={mascotImg} 
                   alt="Pulse si maskot jelly lucu" 
-                  className="h-12 w-12 object-contain relative z-10 drop-shadow-[0_0_16px_rgba(168,85,247,0.75)] animate-breathe" 
+                  className={`h-12 w-12 object-contain relative z-10 drop-shadow-[0_0_16px_rgba(168,85,247,0.75)] ${
+                    mascotPokeActive ? "animate-jelly-poke" : "animate-breathe"
+                  }`} 
                 />
+                {mascotPokeActive && (
+                  <span className="absolute -top-1 -right-1 text-xs animate-pop-in select-none">✨</span>
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
@@ -365,13 +469,17 @@ export default function App() {
               </div>
             </div>
 
-            {/* Bento Grid 2x2 Doppelrand Glass Cards */}
+            {/* Bento Grid 2x2 Doppelrand Glass Cards (Interaktif Click & Hover) */}
             <div className="grid grid-cols-2 gap-2">
               {/* Card 1: Kedip (Emerald Mint Glow) */}
-              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
+              <div 
+                onClick={() => triggerSimulation("blink")}
+                className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                title="Klik untuk simulasi alert kedipan"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-neutral-300 font-display">Kedip</span>
-                  <div className="p-1 rounded-full bg-[#22c55e]/15 border border-[#22c55e]/30">
+                  <span className="text-[10px] font-bold text-neutral-300 font-display group-hover:text-emerald-300 transition-colors">Kedip</span>
+                  <div className="p-1 rounded-full bg-[#22c55e]/15 border border-[#22c55e]/30 group-hover:shadow-[0_0_10px_rgba(34,197,94,0.5)] transition-shadow">
                     <Eye className="h-3 w-3 text-[#22c55e]" />
                   </div>
                 </div>
@@ -384,15 +492,22 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Card 2: Air (Ocean Sky Blue Glow) */}
-              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
+              {/* Card 2: Air (Ocean Sky Blue Glow - Interaktif Quick Add) */}
+              <div 
+                onClick={handleAddWater}
+                className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                title="Klik untuk catat +1 gelas minum air! 💧"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-neutral-300 font-display">Air</span>
-                  <div className="p-1 rounded-full bg-[#38bdf8]/15 border border-[#38bdf8]/30">
+                  <span className="text-[10px] font-bold text-neutral-300 font-display group-hover:text-sky-300 transition-colors">Air (+1 Gelas)</span>
+                  <div className="p-1 rounded-full bg-[#38bdf8]/15 border border-[#38bdf8]/30 group-hover:shadow-[0_0_10px_rgba(56,189,248,0.5)] transition-shadow">
                     <Droplets className="h-3 w-3 text-[#38bdf8]" />
                   </div>
                 </div>
-                <p className="font-mono my-0.5 text-base font-extrabold leading-none text-white">{metrics.hydration}</p>
+                <p className="font-mono my-0.5 text-base font-extrabold leading-none text-white flex items-center justify-between">
+                  <span>{metrics.hydration}</span>
+                  <span className="text-[10px] font-bold text-sky-400 opacity-80 group-hover:opacity-100">+ Minum</span>
+                </p>
                 <div>
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[8.5px] font-bold ${
                     metrics.hydrationStatus === "Baik" 
@@ -406,10 +521,14 @@ export default function App() {
               </div>
 
               {/* Card 3: HP (Warm Coral Glow) */}
-              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
+              <div 
+                onClick={() => triggerSimulation("phone")}
+                className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                title="Klik untuk simulasi deteksi HP"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-neutral-300 font-display">HP</span>
-                  <div className="p-1 rounded-full bg-[#f97316]/15 border border-[#f97316]/30">
+                  <span className="text-[10px] font-bold text-neutral-300 font-display group-hover:text-orange-300 transition-colors">HP</span>
+                  <div className="p-1 rounded-full bg-[#f97316]/15 border border-[#f97316]/30 group-hover:shadow-[0_0_10px_rgba(249,115,22,0.5)] transition-shadow">
                     <Timer className="h-3 w-3 text-[#f97316]" />
                   </div>
                 </div>
@@ -426,23 +545,40 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Card 4: Layar (Lavender Violet Glow) */}
-              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
+              {/* Card 4: Layar (Lavender Violet Glow - Interaktif Break Timer 20-20-20) */}
+              <div 
+                onClick={handleStartBreak}
+                className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                title={breakTimerActive ? "Klik untuk hentikan timer 20-20-20" : "Klik untuk mulai istirahat 20-20-20"}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-neutral-300 font-display">Layar</span>
-                  <div className="p-1 rounded-full bg-[#c084fc]/15 border border-[#c084fc]/30">
+                  <span className="text-[10px] font-bold text-neutral-300 font-display group-hover:text-purple-300 transition-colors">
+                    {breakTimerActive ? `Istirahat (${breakTimerCountdown}s)` : "Layar (20-20-20)"}
+                  </span>
+                  <div className={`p-1 rounded-full border transition-all ${
+                    breakTimerActive 
+                      ? "bg-purple-500/30 border-purple-400 shadow-[0_0_12px_rgba(192,132,252,0.8)]" 
+                      : "bg-[#c084fc]/15 border-[#c084fc]/30 group-hover:shadow-[0_0_10px_rgba(192,132,252,0.5)]"
+                  }`}>
                     <Monitor className="h-3 w-3 text-[#c084fc]" />
                   </div>
                 </div>
-                <p className="font-mono my-0.5 text-base font-extrabold leading-none text-white">{metrics.screenTime}</p>
+                <p className="font-mono my-0.5 text-base font-extrabold leading-none text-white flex items-center justify-between">
+                  <span>{breakTimerActive ? `${breakTimerCountdown} detik` : metrics.screenTime}</span>
+                  <span className={`text-[10px] font-bold ${breakTimerActive ? "text-pink-400 animate-pulse" : "text-purple-400 opacity-80 group-hover:opacity-100"}`}>
+                    {breakTimerActive ? "● Berjalan" : "Mulai"}
+                  </span>
+                </p>
                 <div>
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[8.5px] font-bold ${
-                    metrics.screenStatus === "Aman" 
-                      ? "border-[#22c55e]/40 bg-[#22c55e]/15 text-[#22c55e]" 
-                      : "border-[#c084fc]/40 bg-[#c084fc]/15 text-[#c084fc]"
+                    breakTimerActive 
+                      ? "border-pink-500/50 bg-pink-500/20 text-pink-300 shadow-[0_0_10px_rgba(244,63,94,0.4)]" 
+                      : metrics.screenStatus === "Aman" 
+                        ? "border-[#22c55e]/40 bg-[#22c55e]/15 text-[#22c55e]" 
+                        : "border-[#c084fc]/40 bg-[#c084fc]/15 text-[#c084fc]"
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${metrics.screenStatus === "Aman" ? "bg-[#22c55e]" : "bg-[#c084fc]"} animate-pulse`} />
-                    {metrics.screenStatus}
+                    <span className={`w-1.5 h-1.5 rounded-full ${breakTimerActive ? "bg-pink-400" : metrics.screenStatus === "Aman" ? "bg-[#22c55e]" : "bg-[#c084fc]"} animate-pulse`} />
+                    {breakTimerActive ? "Mata Istirahat" : metrics.screenStatus}
                   </span>
                 </div>
               </div>
@@ -463,16 +599,20 @@ export default function App() {
                 HP
               </button>
               <button 
-                onClick={() => triggerSimulation("hydration")}
+                onClick={handleAddWater}
                 className="flex-1 rounded-full border px-2.5 py-1 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 border-[#38bdf8]/40 bg-[#38bdf8]/15 text-[#38bdf8]"
               >
-                Air
+                + Air
               </button>
               <button 
-                onClick={() => triggerSimulation("screentime")}
-                className="flex-1 rounded-full border px-2.5 py-1 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 border-[#c084fc]/40 bg-[#c084fc]/15 text-[#c084fc]"
+                onClick={handleStartBreak}
+                className={`flex-1 rounded-full border px-2.5 py-1 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 ${
+                  breakTimerActive 
+                    ? "border-pink-500/60 bg-pink-500/25 text-pink-300 shadow-[0_0_10px_rgba(244,63,94,0.5)]" 
+                    : "border-[#c084fc]/40 bg-[#c084fc]/15 text-[#c084fc]"
+                }`}
               >
-                Layar
+                {breakTimerActive ? "Stop" : "Break"}
               </button>
               <button 
                 onClick={resetToIdle}

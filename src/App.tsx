@@ -375,8 +375,10 @@ export default function App() {
               onClick={(e) => {
                 e.stopPropagation();
                 handleMascotPoke();
+                // Expand ke dashboard saat diklik dari alert
+                setWidgetState("expanded");
               }}
-              title="Klik untuk poke Pulse! 💖"
+              title="Klik untuk lihat detail alert! 💖"
             >
               <div className="relative flex items-center justify-center">
                 <div className={`absolute w-10 h-10 rounded-full blur-md animate-soft-glow ${

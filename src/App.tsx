@@ -92,13 +92,15 @@ export default function App() {
     invoke<TelemetrySnapshot>("get_current_telemetry")
       .then((data) => {
         if (data) {
+          if (data.severity) setAlertSeverity(data.severity);
+          if (data.reasoning) setAlertReasoning(data.reasoning);
           setMetrics(prev => ({
             ...prev,
             focusScore: data.focus_score || 85,
             blinkRate: `${data.blink_rate || 12}/min`,
             screenTime: `${(data.screen_time_minutes || 0) * 60}s`,
             hydration: `${data.hydration_count || 0}x`,
-            phoneUsage: `${data.phone_distraction_seconds || 0}s`
+            phoneUsage: `${data.phone_distraction_seconds || 0}s`,
           }));
         }
       })
@@ -117,6 +119,8 @@ export default function App() {
 
     listen<TelemetrySnapshot>("optihabit://telemetry", (event) => {
       const data = event.payload;
+      if (data.severity) setAlertSeverity(data.severity);
+      if (data.reasoning) setAlertReasoning(data.reasoning);
       setMetrics(prev => ({
         ...prev,
         focusScore: data.focus_score,
@@ -241,6 +245,41 @@ export default function App() {
       if (breakIntervalRef.current) clearInterval(breakIntervalRef.current);
     };
   }, []);
+
+  // Helper: Get severity-based colors
+  const getSeverityColors = (severity: "info" | "warning" | "critical") => {
+    switch (severity) {
+      case "info":
+        return {
+          text: "text-blue-300",
+          border: "border-blue-400/50",
+          bg: "bg-blue-500/15",
+          glow: "shadow-[0_0_14px_rgba(59,130,246,0.45)]",
+          pulse: "bg-blue-400",
+          icon: "💡"
+        };
+      case "warning":
+        return {
+          text: "text-amber-300",
+          border: "border-amber-400/50",
+          bg: "bg-amber-500/20",
+          glow: "shadow-[0_0_14px_rgba(251,191,36,0.45)]",
+          pulse: "bg-amber-400",
+          icon: "⚠️"
+        };
+      case "critical":
+        return {
+          text: "text-rose-300",
+          border: "border-rose-500/50",
+          bg: "bg-rose-500/25",
+          glow: "shadow-[0_0_16px_rgba(244,63,94,0.55)]",
+          pulse: "bg-rose-500",
+          icon: "🚨"
+        };
+    }
+  };
+
+  const severityStyle = getSeverityColors(alertSeverity);
 
   return (
     <div 

@@ -4,12 +4,14 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <mutex>
 #include <chrono>
 #include <csignal>
 #include <atomic>
 #include <vector>
 #include <deque>
 #include <algorithm>
+#include <queue>
 
 std::atomic<bool> g_running(true);
 
@@ -17,13 +19,71 @@ void sig_handler(int) {
     g_running = false;
 }
 
+// ============================================================================
+// THREAD-SAFE SHARED STATE STRUCTURES
+// ============================================================================
+
+struct FaceState {
+    bool presence = false;
+    int eyes_detected = 0;
+    double ear = 0.0;
+    cv::Rect face_box = cv::Rect(0, 0, 0, 0);
+};
+
+struct ObjectDetections {
+    bool phone_detected = false;
+    bool drinking_action = false;
+};
+
+struct ContextVector {
+    std::string activity_type = "idle"; // work, meeting, leisure, break
+    float focus_level = 0.5f;
+    float attention_score = 0.5f;
+};
+
+struct TelemetryFrame {
+    int64_t timestamp;
+    FaceState face;
+    ObjectDetections objects;
+    ContextVector context;
+    int blink_rate;
+    int64_t screen_time_seconds;
+    int hydration_count;
+    int64_t last_hydration_sec_ago;
+    int phone_distraction_seconds;
+    int focus_score;
+    std::string current_alert;
+    std::string severity;
+    std::string alert_message;
+};
+
+// Thread-safe queue untuk telemetry frames
+class LockFreeQueue {
+    std::deque<TelemetryFrame> q_;
+    mutable std::mutex m_;
+public:
+    void push(const TelemetryFrame& frame) {
+        std::lock_guard<std::mutex> lock(m_);
+        q_.push_back(frame);
+        if (q_.size() > 100) q_.pop_front(); // Keep last 100
+    }
+    
+    std::vector<TelemetryFrame> get_all() const {
+        std::lock_guard<std::mutex> lock(m_);
+        return std::vector<TelemetryFrame>(q_.begin(), q_.end());
+    }
+};
+
+// ============================================================================
+// POST-PROCESSING & UTILITY FUNCTIONS
+// ============================================================================
+
 struct Detection {
     int class_id;
     float confidence;
     cv::Rect box;
 };
 
-// Post-processing output tensor YOLOv8 [1, 84, 8400]
 std::vector<Detection> postprocess_yolo(const cv::Mat& output, float conf_threshold, float nms_threshold, int img_w, int img_h) {
     std::vector<Detection> detections;
     int dimensions = output.size[1]; // 84
@@ -48,11 +108,9 @@ std::vector<Detection> postprocess_yolo(const cv::Mat& output, float conf_thresh
         float h = row_ptr[3];
 
         const float* scores = row_ptr + 4;
-        // Kelas COCO: 67 (cell phone), 39 (bottle), 41 (cup), 40 (wine glass), 42 (fork), 43 (knife), 44 (spoon), 45 (bowl)
         int target_classes[] = {67, 39, 41, 40, 45};
         for (int cls : target_classes) {
             float conf = scores[cls];
-            // Threshold lebih sensitif untuk objek minuman (0.18) dan ponsel (0.22)
             float threshold = (cls == 67) ? 0.22f : 0.16f;
             if (conf >= threshold) {
                 int left = static_cast<int>((cx - 0.5f * w) * x_factor);
@@ -81,11 +139,205 @@ std::vector<Detection> postprocess_yolo(const cv::Mat& output, float conf_thresh
     return detections;
 }
 
+// ============================================================================
+// WORKER THREAD 1: HIGH-FREQ FACE & EYE DETECTION (150ms)
+// ============================================================================
+
+void face_detection_worker(cv::VideoCapture& cap, std::atomic<FaceState*>& state_ptr,
+                           std::deque<int64_t>& blink_timestamps, std::atomic<bool>& eye_was_open) {
+    cv::CascadeClassifier face_cascade("/usr/share/opencv5/haarcascades/haarcascade_frontalface_default.xml");
+    cv::CascadeClassifier eye_cascade("/usr/share/opencv5/haarcascades/haarcascade_eye.xml");
+    
+    cv::Mat frame;
+    while (g_running) {
+        cap >> frame;
+        if (frame.empty()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            continue;
+        }
+
+        cv::Mat gray;
+        cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+        cv::equalizeHist(gray, gray);
+
+        std::vector<cv::Rect> faces;
+        face_cascade.detectMultiScale(gray, faces, 1.15, 3, 0, cv::Size(60, 60));
+
+        FaceState new_state;
+        new_state.presence = !faces.empty();
+
+        if (new_state.presence) {
+            new_state.face_box = faces[0];
+            
+            int eye_y = new_state.face_box.y + static_cast<int>(new_state.face_box.height * 0.18);
+            int eye_h = static_cast<int>(new_state.face_box.height * 0.35);
+            if (eye_y + eye_h <= gray.rows && new_state.face_box.x + new_state.face_box.width <= gray.cols) {
+                cv::Rect eyeArea(new_state.face_box.x, eye_y, new_state.face_box.width, eye_h);
+                cv::Mat eyeROI = gray(eyeArea);
+                std::vector<cv::Rect> eyes;
+                eye_cascade.detectMultiScale(eyeROI, eyes, 1.10, 2, 0, cv::Size(12, 12));
+                new_state.eyes_detected = static_cast<int>(eyes.size());
+            }
+        }
+
+        // EAR estimation
+        new_state.ear = (new_state.eyes_detected >= 2) ? 0.35 : 
+                        (new_state.eyes_detected == 1 ? 0.25 : (new_state.presence ? 0.10 : 0.0));
+
+        // Blink detection
+        if (new_state.presence) {
+            int64_t now_unix = std::chrono::duration_cast<std::chrono::seconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+            
+            if (new_state.eyes_detected == 0 && eye_was_open) {
+                blink_timestamps.push_back(now_unix);
+                eye_was_open = false;
+            } else if (new_state.eyes_detected >= 1) {
+                eye_was_open = true;
+            }
+
+            // Prune old blinks
+            while (!blink_timestamps.empty() && now_unix - blink_timestamps.front() > 60) {
+                blink_timestamps.pop_front();
+            }
+        } else {
+            eye_was_open = true;
+        }
+
+        // Update atomic state
+        FaceState* old_state = state_ptr.load();
+        if (old_state) delete old_state;
+        state_ptr.store(new FaceState(new_state));
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    }
+}
+
+// ============================================================================
+// WORKER THREAD 2: MID-FREQ YOLO OBJECT DETECTION (450ms, NON-BLOCKING)
+// ============================================================================
+
+void yolo_worker(cv::VideoCapture& cap, std::atomic<ObjectDetections*>& state_ptr,
+                 std::atomic<const FaceState*>& face_state_ptr) {
+    std::string onnx_path = "/home/arrafi/lomba/optihabit/src-tauri/yolov8n.onnx";
+    cv::dnn::Net yolo_net = cv::dnn::readNetFromONNX(onnx_path);
+    yolo_net.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
+    yolo_net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+
+    cv::Mat frame;
+    while (g_running) {
+        cap >> frame;
+        if (frame.empty()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            continue;
+        }
+
+        cv::Mat blob = cv::dnn::blobFromImage(frame, 1.0 / 255.0, cv::Size(640, 640), cv::Scalar(), true, false);
+        yolo_net.setInput(blob);
+        std::vector<cv::Mat> yolo_outputs;
+        yolo_net.forward(yolo_outputs, yolo_net.getUnconnectedOutLayersNames());
+
+        auto detections = postprocess_yolo(yolo_outputs[0], 0.16f, 0.45f, frame.cols, frame.rows);
+
+        ObjectDetections new_state;
+        const FaceState* face_state = face_state_ptr.load();
+
+        for (const auto& det : detections) {
+            if (det.class_id == 67) { // cell phone
+                new_state.phone_detected = true;
+            } else if (det.class_id == 39 || det.class_id == 41 || det.class_id == 40 || det.class_id == 45) {
+                if (face_state && face_state->presence) {
+                    cv::Rect lower_face_region;
+                    int lower_y = face_state->face_box.y + static_cast<int>(face_state->face_box.height * 0.45);
+                    int lower_h = static_cast<int>(face_state->face_box.height * 0.85);
+                    int lower_x = std::max(0, face_state->face_box.x - static_cast<int>(face_state->face_box.width * 0.15));
+                    int lower_w = std::min(frame.cols - lower_x, static_cast<int>(face_state->face_box.width * 1.3));
+                    lower_face_region = cv::Rect(lower_x, std::min(frame.rows - 1, lower_y), lower_w, std::min(frame.rows - lower_y, lower_h));
+
+                    cv::Rect intersection = det.box & lower_face_region;
+                    int obj_center_x = det.box.x + det.box.width / 2;
+                    int obj_center_y = det.box.y + det.box.height / 2;
+                    int face_center_x = face_state->face_box.x + face_state->face_box.width / 2;
+                    int face_center_y = face_state->face_box.y + face_state->face_box.height / 2;
+
+                    bool overlap = intersection.area() > 0;
+                    bool nearby = (std::abs(obj_center_x - face_center_x) < face_state->face_box.width * 0.8) &&
+                                  (obj_center_y > face_state->face_box.y && obj_center_y < face_state->face_box.y + face_state->face_box.height * 1.5);
+
+                    if (overlap || nearby) {
+                        new_state.drinking_action = true;
+                    }
+                }
+            }
+        }
+
+        ObjectDetections* old_state = state_ptr.load();
+        if (old_state) delete old_state;
+        state_ptr.store(new ObjectDetections(new_state));
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(450));
+    }
+}
+
+// ============================================================================
+// WORKER THREAD 3: CONTEXT INFERENCE & DECISION ENGINE (5s aggregate)
+// ============================================================================
+
+void context_inference_worker(const LockFreeQueue& telemetry_queue, std::atomic<ContextVector*>& context_state_ptr) {
+    while (g_running) {
+        auto frames = telemetry_queue.get_all();
+        
+        if (frames.size() >= 10) { // At least 10 samples (should be ~5 frames * 1s avg)
+            float avg_screen_time = 0;
+            float avg_phone_duration = 0;
+            int avg_blink_rate = 0;
+
+            for (const auto& f : frames) {
+                avg_screen_time += f.screen_time_seconds;
+                avg_phone_duration += f.phone_distraction_seconds;
+                avg_blink_rate += f.blink_rate;
+            }
+            avg_screen_time /= frames.size();
+            avg_phone_duration /= frames.size();
+            avg_blink_rate /= frames.size();
+
+            ContextVector new_context;
+
+            // Simple heuristic: Detect work vs leisure vs break
+            if (avg_screen_time > 300 && avg_blink_rate < 8) {
+                new_context.activity_type = "work";
+                new_context.focus_level = 0.7f;
+            } else if (avg_screen_time > 120 && avg_phone_duration > 30) {
+                new_context.activity_type = "leisure";
+                new_context.focus_level = 0.4f;
+            } else if (avg_screen_time < 30) {
+                new_context.activity_type = "break";
+                new_context.focus_level = 0.0f;
+            } else {
+                new_context.activity_type = "idle";
+                new_context.focus_level = 0.5f;
+            }
+
+            new_context.attention_score = (avg_blink_rate > 10) ? 0.8f : (avg_blink_rate > 5 ? 0.5f : 0.2f);
+
+            ContextVector* old_context = context_state_ptr.load();
+            if (old_context) delete old_context;
+            context_state_ptr.store(new ContextVector(new_context));
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+    }
+}
+
+// ============================================================================
+// MAIN LOOP: AGGREGATE TELEMETRY & DECISION ENGINE
+// ============================================================================
+
 int main() {
     std::signal(SIGTERM, sig_handler);
     std::signal(SIGINT, sig_handler);
 
-    // 1. Inisialisasi Kamera V4L2
+    // Initialize camera
     cv::VideoCapture cap(0, cv::CAP_V4L2);
     if (!cap.isOpened()) {
         std::cerr << "ERR: Gagal membuka kamera /dev/video0\n";
@@ -94,157 +346,82 @@ int main() {
     cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
 
-    // Warm-up sensor optik
-    cv::Mat frame;
+    // Warm up
+    cv::Mat warmup;
     for (int i = 0; i < 4; ++i) {
-        cap >> frame;
+        cap >> warmup;
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }
 
-    // 2. Muat Model Computer Vision
-    cv::CascadeClassifier face_cascade("/usr/share/opencv5/haarcascades/haarcascade_frontalface_default.xml");
-    cv::CascadeClassifier eye_cascade("/usr/share/opencv5/haarcascades/haarcascade_eye.xml");
+    // Shared atomic states - INITIALIZE dengan default values
+    std::atomic<FaceState*> face_state(new FaceState());
+    std::atomic<ObjectDetections*> object_state(new ObjectDetections());
+    std::atomic<ContextVector*> context_state(new ContextVector());
+    std::atomic<const FaceState*> face_state_for_yolo(face_state.load());
 
-    std::string onnx_path = "/home/arrafi/lomba/optihabit/src-tauri/yolov8n.onnx";
-    cv::dnn::Net yolo_net = cv::dnn::readNetFromONNX(onnx_path);
-    yolo_net.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
-    yolo_net.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
-
-    std::string out_path = "/home/arrafi/.hermes/cache/scratch/notchpulse_vision.json";
-
-    // 3. State Pelacakan Kebiasaan Riil (100% Optical Telemetry)
+    // State trackers
+    std::deque<int64_t> blink_timestamps;
+    std::atomic<bool> eye_was_open(true);
     int64_t screen_time_seconds = 0;
     int hydration_count = 0;
     int64_t last_hydration_timestamp = std::chrono::duration_cast<std::chrono::seconds>(
         std::chrono::system_clock::now().time_since_epoch()).count();
-    
     double total_phone_distraction_sec = 0.0;
     double continuous_phone_sec = 0.0;
     int consecutive_drinking_ticks = 0;
+    int64_t last_alert_time_phone = 0;
+    int64_t last_alert_time_blink = 0;
 
-    // Sliding window 60 detik untuk frekuensi kedipan riil (blinks per minute)
-    std::deque<int64_t> blink_timestamps;
-    bool eye_was_open = true;
+    // Telemetry queue
+    LockFreeQueue telemetry_queue;
+
+    // Output path
+    std::string out_path = "/home/arrafi/.hermes/cache/scratch/notchpulse_vision.json";
+
+    // Start worker threads
+    std::thread t_face(face_detection_worker, std::ref(cap), std::ref(face_state), 
+                       std::ref(blink_timestamps), std::ref(eye_was_open));
+    std::thread t_yolo(yolo_worker, std::ref(cap), std::ref(object_state), 
+                       std::ref(face_state_for_yolo));
+    std::thread t_context(context_inference_worker, std::ref(telemetry_queue), std::ref(context_state));
 
     auto last_tick_time = std::chrono::steady_clock::now();
 
+    // Main aggregation loop (1s per iteration)
     while (g_running) {
-        cap >> frame;
-        if (frame.empty()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            continue;
-        }
-
         auto now_clock = std::chrono::steady_clock::now();
         double dt = std::chrono::duration<double>(now_clock - last_tick_time).count();
         last_tick_time = now_clock;
         int64_t now_unix = std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
 
-        // A. Deteksi Wajah & Mata (Haar Cascade)
-        cv::Mat gray;
-        cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
-        cv::equalizeHist(gray, gray);
+        // Read latest states from worker threads
+        FaceState* face_state_ptr = face_state.load();
+        ObjectDetections* object_state_ptr = object_state.load();
+        ContextVector* context_state_ptr = context_state.load();
 
-        std::vector<cv::Rect> faces;
-        face_cascade.detectMultiScale(gray, faces, 1.15, 3, 0, cv::Size(60, 60));
+        face_state_for_yolo = face_state_ptr; // Share for YOLO worker
 
-        bool presence = !faces.empty();
-        int eyes_detected = 0;
-        cv::Rect face_box(0, 0, 0, 0);
-
-        if (presence) {
-            face_box = faces[0];
+        // Update screen time
+        if (face_state_ptr->presence) {
             screen_time_seconds += static_cast<int64_t>(dt + 0.5);
-
-            int eye_y = face_box.y + static_cast<int>(face_box.height * 0.18);
-            int eye_h = static_cast<int>(face_box.height * 0.35);
-            if (eye_y + eye_h <= gray.rows && face_box.x + face_box.width <= gray.cols) {
-                cv::Rect eyeArea(face_box.x, eye_y, face_box.width, eye_h);
-                cv::Mat eyeROI = gray(eyeArea);
-                std::vector<cv::Rect> eyes;
-                // Deteksi mata lebih sensitif dengan minSize 12x12
-                eye_cascade.detectMultiScale(eyeROI, eyes, 1.10, 2, 0, cv::Size(12, 12));
-                eyes_detected = static_cast<int>(eyes.size());
-            }
+        } else {
+            screen_time_seconds = 0;
         }
 
-        // Estimasi nilai EAR adaptif: 2 mata = 0.35 (terbuka penuh), 1 mata = 0.25, 0 mata = 0.10 (tertutup/kedip)
-        double ear = (eyes_detected >= 2) ? 0.35 : (eyes_detected == 1 ? 0.25 : (presence ? 0.10 : 0.0));
-        if (presence) {
-            // Jika mata sebelumnya terbuka dan sekarang 0 mata terdeteksi di area wajah
-            if (eyes_detected == 0 && eye_was_open) {
-                blink_timestamps.push_back(now_unix);
-                eye_was_open = false;
-            } else if (eyes_detected >= 1) {
-                eye_was_open = true;
-            }
-        }
-
-        // Hapus timestamp kedipan lebih dari 60 detik lalu
-        while (!blink_timestamps.empty() && now_unix - blink_timestamps.front() > 60) {
-            blink_timestamps.pop_front();
-        }
-        int blink_rate = static_cast<int>(blink_timestamps.size());
-
-        // B. Deteksi Objek Riil (YOLOv8n ONNX: Cell Phone & Bottle/Cup)
-        cv::Mat blob = cv::dnn::blobFromImage(frame, 1.0 / 255.0, cv::Size(640, 640), cv::Scalar(), true, false);
-        yolo_net.setInput(blob);
-        std::vector<cv::Mat> yolo_outputs;
-        yolo_net.forward(yolo_outputs, yolo_net.getUnconnectedOutLayersNames());
-
-        auto detections = postprocess_yolo(yolo_outputs[0], 0.16f, 0.45f, frame.cols, frame.rows);
-
-        bool phone_detected = false;
-        bool drinking_action = false;
-
-        cv::Rect lower_face_region(0, 0, 0, 0);
-        if (presence) {
-            // Area mulut, dagu, dan leher diperlebar ke bawah untuk menangkap gelas/botol yang ditempelkan
-            int lower_y = face_box.y + static_cast<int>(face_box.height * 0.45);
-            int lower_h = static_cast<int>(face_box.height * 0.85);
-            int lower_x = std::max(0, face_box.x - static_cast<int>(face_box.width * 0.15));
-            int lower_w = std::min(frame.cols - lower_x, static_cast<int>(face_box.width * 1.3));
-            lower_face_region = cv::Rect(lower_x, std::min(frame.rows - 1, lower_y), lower_w, std::min(frame.rows - lower_y, lower_h));
-        }
-
-        for (const auto& det : detections) {
-            if (det.class_id == 67) { // cell phone
-                phone_detected = true;
-            } else if (det.class_id == 39 || det.class_id == 41 || det.class_id == 40 || det.class_id == 45) { // bottle, cup, wine glass, bowl
-                if (presence) {
-                    cv::Rect intersection = det.box & lower_face_region;
-                    // Bounding box botol/cangkir bersentuhan atau berada di area mulut/dagu
-                    int obj_center_x = det.box.x + det.box.width / 2;
-                    int obj_center_y = det.box.y + det.box.height / 2;
-                    int face_center_x = face_box.x + face_box.width / 2;
-                    int face_center_y = face_box.y + face_box.height / 2;
-
-                    bool overlap = intersection.area() > 0;
-                    bool nearby = (std::abs(obj_center_x - face_center_x) < face_box.width * 0.8) &&
-                                  (obj_center_y > face_box.y && obj_center_y < face_box.y + face_box.height * 1.5);
-
-                    if (overlap || nearby) {
-                        drinking_action = true;
-                    }
-                }
-            }
-        }
-
-        // Pelacak distraksi ponsel
-        if (phone_detected) {
+        // Update phone distraction
+        if (object_state_ptr->phone_detected) {
             total_phone_distraction_sec += dt;
             continuous_phone_sec += dt;
         } else {
             continuous_phone_sec = 0.0;
         }
 
-        // Pelacak aksi minum air dengan debounce (cooldown 15 detik agar tidak menghitung ganda per teguk)
+        // Track hydration with debounce
         static int64_t last_hydration_trigger_time = 0;
-        if (drinking_action) {
+        if (object_state_ptr->drinking_action) {
             consecutive_drinking_ticks++;
-            // 2 tick berturut-turut (~300ms) untuk validasi aksi minum nyata
-            if (consecutive_drinking_ticks >= 2) { 
+            if (consecutive_drinking_ticks >= 2) {
                 if (now_unix - last_hydration_trigger_time > 15) {
                     hydration_count++;
                     last_hydration_timestamp = now_unix;
@@ -257,55 +434,125 @@ int main() {
         }
 
         int64_t last_hydration_sec_ago = now_unix - last_hydration_timestamp;
+        int blink_rate = static_cast<int>(blink_timestamps.size());
 
-        // C. Perhitungan Skor Fokus Dinamis (0 - 100)
-        int phone_penalty = std::min(35, static_cast<int>(total_phone_distraction_sec / 15.0));
-        int screen_penalty = (screen_time_seconds > 1200) ? std::min(30, static_cast<int>((screen_time_seconds - 1200) / 60) * 2) : 0;
-        int blink_penalty = (presence && blink_rate < 10) ? (10 - blink_rate) * 2 : 0;
-        int focus_score = std::max(15, std::min(100, 100 - phone_penalty - screen_penalty - blink_penalty));
-
-        // D. Keputusan Kategori Peringatan (Decision Engine)
+        // ====== PROGRESSIVE SEVERITY DECISION ENGINE (P3) ======
         std::string current_alert = "idle";
+        std::string severity = "info";
         std::string alert_message = "Fokus Optimal";
 
-        if (continuous_phone_sec >= 4.0) {
+        // Phone distraction thresholds (progressive)
+        if (continuous_phone_sec >= 30.0) {
             current_alert = "phone";
-            alert_message = "Distraksi Ponsel: Terlalu lama melihat HP";
-        } else if (presence && blink_rate < 10 && screen_time_seconds > 60) {
-            current_alert = "blink";
-            alert_message = "Kelelahan Mata: Kurang berkedip";
-        } else if (screen_time_seconds >= 1200) {
-            current_alert = "screentime";
-            alert_message = "Waktu Layar: 20 Menit, Istirahatkan Mata";
-        } else if (last_hydration_sec_ago >= 3600) {
-            current_alert = "hydration";
-            alert_message = "Waktunya Minum Air";
+            severity = "critical";
+            alert_message = "HP terlalu lama! Produktivitas menurun.";
+        } else if (continuous_phone_sec >= 15.0) {
+            current_alert = "phone";
+            severity = "warning";
+            alert_message = "HP terdeteksi. Cek notifikasi sebentar lalu fokus.";
         }
 
-        // E. Tulis Snapshot Telemetri Riil ke JSON Atomic
+        // Blink fatigue (only if not already alerted)
+        if (current_alert == "idle" && face_state_ptr->presence && screen_time_seconds > 120) {
+            if (blink_rate < 5) {
+                current_alert = "blink";
+                severity = "critical";
+                alert_message = "Mata sangat lelah! Istirahat 20 detik sekarang.";
+            } else if (blink_rate < 8) {
+                current_alert = "blink";
+                severity = "warning";
+                alert_message = "Mata mulai lelah. Berkedip lebih banyak.";
+            }
+        }
+
+        // Screen time (only if not already alerted)
+        if (current_alert == "idle") {
+            if (screen_time_seconds >= 3600) {
+                current_alert = "screentime";
+                severity = "critical";
+                alert_message = "1 jam layar! Istirahat 20 detik jauh dari layar.";
+            } else if (screen_time_seconds >= 2700) {
+                current_alert = "screentime";
+                severity = "warning";
+                alert_message = "45 menit layar. Rencanakan break 20 detik.";
+            }
+        }
+
+        // Hydration (only if not already alerted)
+        if (current_alert == "idle") {
+            if (last_hydration_sec_ago >= 5400) {
+                current_alert = "hydration";
+                severity = "critical";
+                alert_message = "90 menit tanpa minum! Minum sekarang.";
+            } else if (last_hydration_sec_ago >= 3600) {
+                current_alert = "hydration";
+                severity = "warning";
+                alert_message = "Sudah 1 jam. Waktunya minum air.";
+            }
+        }
+
+        // Calculate focus score
+        int phone_penalty = std::min(35, static_cast<int>(total_phone_distraction_sec / 15.0));
+        int screen_penalty = (screen_time_seconds > 1200) ? std::min(30, static_cast<int>((screen_time_seconds - 1200) / 60) * 2) : 0;
+        int blink_penalty = (face_state_ptr->presence && blink_rate < 10) ? (10 - blink_rate) * 2 : 0;
+        int focus_score = std::max(15, std::min(100, 100 - phone_penalty - screen_penalty - blink_penalty));
+
+        // Build telemetry frame
+        TelemetryFrame frame;
+        frame.timestamp = now_unix;
+        frame.face = *face_state_ptr;
+        frame.objects = *object_state_ptr;
+        frame.context = *context_state_ptr;
+        frame.blink_rate = blink_rate;
+        frame.screen_time_seconds = screen_time_seconds;
+        frame.hydration_count = hydration_count;
+        frame.last_hydration_sec_ago = last_hydration_sec_ago;
+        frame.phone_distraction_seconds = static_cast<int>(total_phone_distraction_sec);
+        frame.focus_score = focus_score;
+        frame.current_alert = current_alert;
+        frame.severity = severity;
+        frame.alert_message = alert_message;
+
+        telemetry_queue.push(frame);
+
+        // Write JSON output
         std::ofstream ofs(out_path + ".tmp");
         if (ofs.is_open()) {
             ofs << "{"
-                << "\"presence\":" << (presence ? "true" : "false") << ","
-                << "\"eyes\":" << eyes_detected << ","
-                << "\"ear\":" << ear << ","
+                << "\"presence\":" << (face_state_ptr->presence ? "true" : "false") << ","
+                << "\"eyes\":" << face_state_ptr->eyes_detected << ","
+                << "\"ear\":" << face_state_ptr->ear << ","
                 << "\"blink_rate\":" << blink_rate << ","
                 << "\"screen_time_seconds\":" << screen_time_seconds << ","
                 << "\"hydration_count\":" << hydration_count << ","
                 << "\"last_hydration_sec_ago\":" << last_hydration_sec_ago << ","
-                << "\"phone_detected\":" << (phone_detected ? "true" : "false") << ","
-                << "\"phone_distraction_seconds\":" << static_cast<int>(total_phone_distraction_sec) << ","
+                << "\"phone_detected\":" << (object_state_ptr->phone_detected ? "true" : "false") << ","
+                << "\"phone_distraction_seconds\":" << frame.phone_distraction_seconds << ","
                 << "\"focus_score\":" << focus_score << ","
                 << "\"current_alert\":\"" << current_alert << "\","
+                << "\"severity\":\"" << severity << "\","
                 << "\"alert_message\":\"" << alert_message << "\","
+                << "\"context_activity\":\"" << context_state_ptr->activity_type << "\","
                 << "\"timestamp\":" << now_unix
                 << "}\n";
             ofs.close();
             std::rename((out_path + ".tmp").c_str(), out_path.c_str());
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
+
+    // Cleanup
+    t_face.join();
+    t_yolo.join();
+    t_context.join();
+
+    FaceState* f = face_state.load();
+    if (f) delete f;
+    ObjectDetections* o = object_state.load();
+    if (o) delete o;
+    ContextVector* c = context_state.load();
+    if (c) delete c;
 
     return 0;
 }

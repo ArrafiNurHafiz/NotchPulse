@@ -36,9 +36,20 @@ struct VisionSnapshot {
     current_alert: String,
     #[serde(default)]
     alert_message: String,
+    #[serde(default = "default_info")]
+    severity: String,
+    #[serde(default = "default_idle")]
+    context_activity: String,
 }
-fn default_100() -> u32 { 100 }
-fn default_idle() -> String { "idle".into() }
+fn default_100() -> u32 {
+    100
+}
+fn default_idle() -> String {
+    "idle".into()
+}
+fn default_info() -> String {
+    "info".into()
+}
 
 #[tauri::command]
 fn get_current_telemetry(state: State<'_, Arc<AppState>>) -> TelemetrySnapshot {

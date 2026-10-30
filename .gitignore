@@ -28,3 +28,4 @@ src-tauri/target/
 **/target/
 src-tauri/src/vision_daemon
 src-tauri/src/vision_detector
+*.onnx

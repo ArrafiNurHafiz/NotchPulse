@@ -14,6 +14,32 @@ pub struct AppState {
     pub db: Mutex<DatabaseManager>,
 }
 
+#[derive(serde::Deserialize, Default)]
+struct VisionSnapshot {
+    #[serde(default)]
+    presence: bool,
+    #[serde(default)]
+    blink_rate: u32,
+    #[serde(default)]
+    screen_time_seconds: u64,
+    #[serde(default)]
+    hydration_count: u32,
+    #[serde(default)]
+    last_hydration_sec_ago: i64,
+    #[serde(default)]
+    phone_detected: bool,
+    #[serde(default)]
+    phone_distraction_seconds: u32,
+    #[serde(default = "default_100")]
+    focus_score: u32,
+    #[serde(default = "default_idle")]
+    current_alert: String,
+    #[serde(default)]
+    alert_message: String,
+}
+fn default_100() -> u32 { 100 }
+fn default_idle() -> String { "idle".into() }
+
 #[tauri::command]
 fn get_current_telemetry(state: State<'_, Arc<AppState>>) -> TelemetrySnapshot {
     state.telemetry.lock().unwrap().clone()
@@ -137,44 +163,42 @@ pub fn run() {
                     std::thread::sleep(Duration::from_millis(500));
                     ticker += 1;
 
-                    // Baca hasil inferensi real-time dari vision_daemon
-                    let (is_present, ear_val) = if let Ok(content) = std::fs::read_to_string(vision_file) {
-                        let presence = content.contains("\"presence\":true");
-                        let ear = if content.contains("\"ear\":0.32") {
-                            0.32
-                        } else if content.contains("\"ear\":0.22") {
-                            0.22
-                        } else if content.contains("\"ear\":0.12") {
-                            0.12
-                        } else {
-                            0.0
-                        };
-                        (presence, ear)
-                    } else {
-                        (false, 0.0)
-                    };
-
-                    // Update live telemetry snapshot ke frontend
-                    {
-                        let mut tel = bg_state.telemetry.lock().unwrap();
-                        if is_present {
-                            tel.screen_time_minutes = (ticker / 120) as u32;
-                            if ear_val < 0.20 && ear_val > 0.0 {
-                                tel.blink_rate = 8;
-                            } else if ear_val >= 0.20 {
-                                tel.blink_rate = 14;
+                    // Baca snapshot telemetri riil dari vision_daemon
+                    if let Ok(content) = std::fs::read_to_string(vision_file) {
+                        if let Ok(snap) = serde_json::from_str::<VisionSnapshot>(&content) {
+                            {
+                                let mut tel = bg_state.telemetry.lock().unwrap();
+                                tel.focus_score = snap.focus_score;
+                                tel.blink_rate = snap.blink_rate;
+                                tel.screen_time_minutes = (snap.screen_time_seconds / 60) as u32;
+                                tel.hydration_count = snap.hydration_count;
+                                tel.phone_distraction_seconds = snap.phone_distraction_seconds;
+                                let _ = handle.emit("optihabit://telemetry", &*tel);
                             }
-                        }
-                        let _ = handle.emit("optihabit://telemetry", &*tel);
-                    }
 
-                    let mut engine = bg_state.engine.lock().unwrap();
-                    let maybe_event = engine.process_tick(ticker, is_present, false, false, ear_val);
-
-                    if let Some(event) = maybe_event {
-                        let _ = handle.emit("optihabit://event", &event);
-                        if let Ok(db) = bg_state.db.lock() {
-                            let _ = db.log_event(None, &format!("{:?}", event.alert_type), 0, &event.message);
+                            if snap.current_alert != "idle" {
+                                let event = HabitEventPayload {
+                                    alert_type: match snap.current_alert.as_str() {
+                                        "phone" => AlertType::Phone,
+                                        "blink" => AlertType::Blink,
+                                        "screentime" => AlertType::ScreenTime,
+                                        "hydration" => AlertType::Hydration,
+                                        _ => AlertType::Idle,
+                                    },
+                                    title: "NotchPulse Alert".into(),
+                                    message: snap.alert_message.clone(),
+                                    timestamp_ms: snap.screen_time_seconds * 1000,
+                                };
+                                let _ = handle.emit("optihabit://event", &event);
+                            } else {
+                                let event = HabitEventPayload {
+                                    alert_type: AlertType::Idle,
+                                    title: "Optimal".into(),
+                                    message: "Fokus Optimal".into(),
+                                    timestamp_ms: snap.screen_time_seconds * 1000,
+                                };
+                                let _ = handle.emit("optihabit://event", &event);
+                            }
                         }
                     }
                 }

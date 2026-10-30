@@ -112,7 +112,12 @@ export default function App() {
         focusScore: data.focus_score,
         blinkRate: `${data.blink_rate}/min`,
         screenTime: `${data.screen_time_minutes * 60}s`,
-        phoneUsage: `${Math.round(data.phone_distraction_seconds / 60)}/15 min`
+        hydration: `${data.hydration_count}x`,
+        phoneUsage: `${data.phone_distraction_seconds}s`,
+        blinkStatus: data.blink_rate >= 10 ? "Normal" : "Kurang",
+        phoneStatus: data.phone_distraction_seconds > 4 ? "Terlalu lama" : "Aman",
+        hydrationStatus: data.hydration_count > 0 ? "Baik" : "Perlu minum",
+        screenStatus: data.screen_time_minutes >= 20 ? "Perlu istirahat" : "Aman"
       }));
     }).then(unsub => { unlistenTelemetry = unsub; });
 
@@ -209,29 +214,35 @@ export default function App() {
         )}
 
         {/* =================================================================== */}
-        {/* 2. STATE: ALERT (Lebar: 350px, Border/Glow: Oranye #F97316)          */}
+        {/* 2. STATE: ALERT (Lebar: 360px, Border/Glow: Oranye #F97316)          */}
         {/* =================================================================== */}
         {widgetState === "alert" && (
           <div className="w-full flex items-center justify-between gap-1.5 text-[11px] z-10">
             {/* Sub-Pill 1: Mata (Biru Toska / Cyan #06B6D4) */}
-            <div className="flex items-center gap-1.5 bg-[#06B6D4]/15 border border-[#06B6D4]/35 px-2.5 py-0.5 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.25)]">
+            <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border shadow-[0_0_8px_rgba(6,182,212,0.25)] ${
+              activeCategory === "blink" ? "bg-[#06B6D4]/30 border-[#06B6D4]" : "bg-[#06B6D4]/15 border-[#06B6D4]/35"
+            }`}>
               <Eye className="w-3.5 h-3.5 text-[#06B6D4]" />
               <span className="text-neutral-200 font-medium">Mata</span>
-              <span className="text-[#06B6D4] text-[10px] font-semibold">Terlalu lama</span>
+              <span className="text-[#06B6D4] text-[10px] font-semibold">{metrics.blinkRate}</span>
             </div>
 
             {/* Sub-Pill 2: HP (Oranye #F97316) */}
-            <div className="flex items-center gap-1.5 bg-[#F97316]/15 border border-[#F97316]/35 px-2.5 py-0.5 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.25)]">
+            <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border shadow-[0_0_8px_rgba(249,115,22,0.25)] ${
+              activeCategory === "phone" ? "bg-[#F97316]/30 border-[#F97316]" : "bg-[#F97316]/15 border-[#F97316]/35"
+            }`}>
               <Smartphone className="w-3.5 h-3.5 text-[#F97316]" />
               <span className="text-neutral-200 font-medium">HP</span>
-              <span className="text-[#F97316] text-[10px] font-semibold">5m</span>
+              <span className="text-[#F97316] text-[10px] font-semibold">{metrics.phoneUsage}</span>
             </div>
 
             {/* Sub-Pill 3: Air (Biru Toska / Cyan #06B6D4) */}
-            <div className="flex items-center gap-1.5 bg-[#06B6D4]/15 border border-[#06B6D4]/35 px-2.5 py-0.5 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.25)]">
+            <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border shadow-[0_0_8px_rgba(6,182,212,0.25)] ${
+              activeCategory === "hydration" ? "bg-[#06B6D4]/30 border-[#06B6D4]" : "bg-[#06B6D4]/15 border-[#06B6D4]/35"
+            }`}>
               <Droplets className="w-3.5 h-3.5 text-[#06B6D4]" />
               <span className="text-neutral-200 font-medium">Air</span>
-              <span className="text-[#06B6D4] text-[10px] font-semibold">~1h</span>
+              <span className="text-[#06B6D4] text-[10px] font-semibold">{metrics.hydration}</span>
             </div>
           </div>
         )}
@@ -281,9 +292,11 @@ export default function App() {
                   <Eye className="w-3.5 h-3.5 text-[#06B6D4]" />
                 </div>
                 <div className="text-base font-extrabold text-white font-mono">{metrics.blinkRate}</div>
-                <div className="flex items-center gap-1 text-[10px] text-[#22C55E] font-medium">
+                <div className={`flex items-center gap-1 text-[10px] font-medium ${
+                  metrics.blinkStatus === "Normal" ? "text-[#22C55E]" : "text-[#F97316]"
+                }`}>
                   <span>▲</span>
-                  <span>Normal</span>
+                  <span>{metrics.blinkStatus}</span>
                 </div>
               </div>
 
@@ -294,9 +307,11 @@ export default function App() {
                   <Droplets className="w-3.5 h-3.5 text-[#06B6D4]" />
                 </div>
                 <div className="text-base font-extrabold text-white font-mono">{metrics.hydration}</div>
-                <div className="flex items-center gap-1 text-[10px] text-[#22C55E] font-medium">
+                <div className={`flex items-center gap-1 text-[10px] font-medium ${
+                  metrics.hydrationStatus === "Baik" ? "text-[#22C55E]" : "text-[#FBBF24]"
+                }`}>
                   <span>▲</span>
-                  <span>Baik</span>
+                  <span>{metrics.hydrationStatus}</span>
                 </div>
               </div>
 
@@ -307,9 +322,11 @@ export default function App() {
                   <Smartphone className="w-3.5 h-3.5 text-[#F97316]" />
                 </div>
                 <div className="text-base font-extrabold text-white font-mono">{metrics.phoneUsage}</div>
-                <div className="flex items-center gap-1 text-[10px] text-[#F97316] font-medium">
+                <div className={`flex items-center gap-1 text-[10px] font-medium ${
+                  metrics.phoneStatus === "Aman" ? "text-[#22C55E]" : "text-[#F97316]"
+                }`}>
                   <span>▲</span>
-                  <span>Terlalu lama</span>
+                  <span>{metrics.phoneStatus}</span>
                 </div>
               </div>
 
@@ -320,9 +337,11 @@ export default function App() {
                   <Monitor className="w-3.5 h-3.5 text-[#8B5CF6]" />
                 </div>
                 <div className="text-base font-extrabold text-white font-mono">{metrics.screenTime}</div>
-                <div className="flex items-center gap-1 text-[10px] text-[#FBBF24] font-medium">
+                <div className={`flex items-center gap-1 text-[10px] font-medium ${
+                  metrics.screenStatus === "Aman" ? "text-[#22C55E]" : "text-[#FBBF24]"
+                }`}>
                   <span>▲</span>
-                  <span>Perlu istirahat</span>
+                  <span>{metrics.screenStatus}</span>
                 </div>
               </div>
             </div>

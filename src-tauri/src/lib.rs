@@ -212,9 +212,9 @@ pub fn run() {
             let handle = app.handle().clone();
             let bg_state = Arc::clone(&state_clone);
 
-            // Jalankan vision_daemon native secara persisten
-            let _daemon = std::process::Command::new("/home/arrafi/lomba/optihabit/src-tauri/src/vision_daemon")
-                .spawn();
+            // Vision daemon sudah running manually di background (PID eksternal)
+            // Backend hanya membaca telemetry JSON file yang diupdate oleh daemon
+            // Skip auto-spawn untuk hindari camera lock conflict
 
             std::thread::spawn(move || {
                 let mut ticker = 0u64;

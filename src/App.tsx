@@ -1,17 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { 
   Eye, 
-  Smartphone, 
   Droplets, 
   Monitor,
+  Timer,
   Pin,
   PinOff,
-  Activity,
-  AudioWaveform,
-  RotateCcw
+  RefreshCcw,
+  TriangleAlert
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import mascotImg from "./assets/island_mascot.png";
 
 type WidgetState = "idle" | "alert" | "expanded";
 type AlertCategory = "none" | "blink" | "phone" | "hydration" | "screentime";
@@ -36,20 +36,20 @@ export default function App() {
   const [widgetState, setWidgetState] = useState<WidgetState>("idle");
   const [pinned, setPinned] = useState(false);
   const [activeCategory, setActiveCategory] = useState<AlertCategory>("none");
-  const [currentTime, setCurrentTime] = useState("10:24");
+  const [currentTime, setCurrentTime] = useState("09:43");
   const collapseTimerRef = useRef<number | null>(null);
 
-  // Data telemetri real-time sesuai spesifikasi kartu metrik
+  // Data telemetri real-time optik
   const [metrics, setMetrics] = useState({
     focusScore: 85,
     blinkRate: "12/min",
     blinkStatus: "Normal",
-    hydration: "60+ min",
-    hydrationStatus: "Baik",
-    phoneUsage: "08/15 min",
-    phoneStatus: "Terlalu lama",
-    screenTime: "1200s",
-    screenStatus: "Perlu istirahat"
+    hydration: "0x",
+    hydrationStatus: "Perlu minum",
+    phoneUsage: "0s",
+    phoneStatus: "Aman",
+    screenTime: "0s",
+    screenStatus: "Aman"
   });
 
   // Jam lokal digital
@@ -59,22 +59,22 @@ export default function App() {
       setCurrentTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
     };
     updateClock();
-    const interval = setInterval(updateClock, 10000);
+    const interval = setInterval(updateClock, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  // Update input region dinamis ke backend Rust / Wayland layer-shell
+  // Update input region dinamis ke Wayland layer-shell
   useEffect(() => {
-    let bounds = { x: 110.0, y: 0.0, width: 240.0, height: 48.0 };
+    let bounds = { x: 140.0, y: 0.0, width: 180.0, height: 48.0 };
     if (widgetState === "alert") {
       bounds = { x: 50.0, y: 0.0, width: 360.0, height: 48.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 25.0, y: 0.0, width: 410.0, height: 320.0 };
+      bounds = { x: 65.0, y: 0.0, width: 330.0, height: 350.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
 
-  // Listen stream event dari backend Rust
+  // Listen stream event telemetri riil dari daemon
   useEffect(() => {
     let unlistenEvent: (() => void) | undefined;
     let unlistenTelemetry: (() => void) | undefined;
@@ -86,9 +86,9 @@ export default function App() {
             ...prev,
             focusScore: data.focus_score || 85,
             blinkRate: `${data.blink_rate || 12}/min`,
-            screenTime: `${(data.screen_time_minutes || 20) * 60}s`,
-            hydration: `${data.hydration_count ? data.hydration_count * 30 : 60}+ min`,
-            phoneUsage: `${data.phone_distraction_seconds ? Math.round(data.phone_distraction_seconds / 60) : 8}/15 min`
+            screenTime: `${(data.screen_time_minutes || 0) * 60}s`,
+            hydration: `${data.hydration_count || 0}x`,
+            phoneUsage: `${data.phone_distraction_seconds || 0}s`
           }));
         }
       })
@@ -127,7 +127,7 @@ export default function App() {
     };
   }, [pinned]);
 
-  // Behavior: Auto-collapse 2.5 detik saat kursor keluar (jika tidak di-pin)
+  // Auto-collapse dengan debounce 3 detik saat mouse meninggalkan pulau (jika tidak di-pin)
   const handleMouseEnter = () => {
     if (collapseTimerRef.current) {
       window.clearTimeout(collapseTimerRef.current);
@@ -139,7 +139,7 @@ export default function App() {
     if (!pinned && widgetState === "expanded") {
       collapseTimerRef.current = window.setTimeout(() => {
         setWidgetState(activeCategory !== "none" ? "alert" : "idle");
-      }, 2500);
+      }, 3000);
     }
   };
 
@@ -173,216 +173,229 @@ export default function App() {
 
   return (
     <div 
-      className="w-full flex flex-col items-center justify-start select-none"
+      className="w-full h-full flex flex-col items-center justify-start select-none pt-0.5"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {/* Dynamic Island Capsule - Top Bezel */}
-      <div 
+      {/* Dynamic Island Capsule - Desain Playful Lovable Glow */}
+      <button 
+        aria-label="NotchPulse Dynamic Island"
         onClick={handlePillClick}
-        className={`hardware-notch-shell cursor-pointer flex flex-col items-center ${
+        className={`island-shell relative z-20 cursor-pointer overflow-hidden flex flex-col items-center text-left ${
           widgetState === "idle"
-            ? "w-[240px] h-[48px] notch-glow-idle py-2 px-4 justify-center"
+            ? "island-shell-idle h-12 w-44 rounded-full px-3 py-1.5 justify-center"
             : widgetState === "alert"
-              ? "w-[360px] h-[48px] notch-glow-alert py-2 px-3.5 justify-center"
-              : "w-[410px] min-h-[260px] notch-glow-expanded p-3.5"
+              ? "island-shell-alert h-12 w-[360px] rounded-full px-3 py-1.5 justify-center"
+              : "island-shell-expanded h-[340px] w-[320px] rounded-[2rem] p-3.5"
         }`}
       >
-        {/* Specular Highlight Line */}
-        <div className="notch-specular" />
         {/* =================================================================== */}
-        {/* 1. STATE: IDLE (Lebar: 240px, Border/Glow: Hijau #22C55E)           */}
+        {/* 1. STATE: IDLE (h-12 w-44 rounded-full - Maskot Jelly & Waveform)   */}
         {/* =================================================================== */}
         {widgetState === "idle" && (
-          <div className="w-full flex items-center justify-between z-10 px-1 overflow-hidden">
-            {/* Kiri: Ikon Daun / Fokus */}
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="w-4 h-4 rounded-full bg-[#22C55E]/20 flex items-center justify-center border border-[#22C55E]/40 shadow-[0_0_8px_rgba(34,197,94,0.4)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
-              </div>
-              <span className="text-xs font-semibold text-white tracking-wide">Fokus</span>
+          <div className="w-full flex items-center justify-between z-10 px-0.5">
+            {/* Kiri: Maskot Jelly Pulse Mini Lucu */}
+            <div className="flex items-center gap-1.5">
+              <img 
+                src={mascotImg} 
+                alt="Pulse Maskot" 
+                className="w-7 h-7 object-contain animate-breathe drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" 
+              />
+              <span className="text-xs font-bold text-white tracking-wide font-display">Pulse</span>
             </div>
 
-            {/* Kanan: Skor & Gelombang Audio Hijau */}
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs font-mono font-medium text-neutral-300">Skor {metrics.focusScore}</span>
-              <div className="flex items-center text-[#22C55E] drop-shadow-[0_0_6px_rgba(34,197,94,0.6)]">
-                <AudioWaveform className="w-3.5 h-3.5 animate-pulse" />
+            {/* Kanan: Equalizer Waveform Ungu Neon */}
+            <div className="flex items-center gap-1">
+              <div className="flex items-end gap-0.5 h-3.5 text-[#c084fc]">
+                <span className="w-1 bg-[#c084fc] rounded-full h-2 animate-pulse" />
+                <span className="w-1 bg-[#c084fc] rounded-full h-3.5 animate-pulse" style={{ animationDelay: "150ms" }} />
+                <span className="w-1 bg-[#c084fc] rounded-full h-2.5 animate-pulse" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           </div>
         )}
 
         {/* =================================================================== */}
-        {/* 2. STATE: ALERT (Lebar: 360px, Border/Glow: Oranye #F97316)          */}
+        {/* 2. STATE: ALERT (Pill Meluas dengan 3 Sub-Pill Warna-Warni)         */}
         {/* =================================================================== */}
         {widgetState === "alert" && (
-          <div className="w-full flex items-center justify-between gap-1.5 text-[11px] z-10 overflow-hidden">
-            {/* Sub-Pill 1: Mata (Biru Toska / Cyan #06B6D4) */}
-            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border shadow-[0_0_8px_rgba(6,182,212,0.25)] flex-1 justify-center ${
+          <div className="w-full flex items-center justify-between gap-1.5 text-[11px] z-10">
+            {/* Sub-Pill 1: Mata (Biru Toska / Cyan) */}
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-[0_0_8px_rgba(6,182,212,0.25)] flex-1 justify-center transition-all ${
               activeCategory === "blink" ? "bg-[#06B6D4]/30 border-[#06B6D4]" : "bg-[#06B6D4]/15 border-[#06B6D4]/35"
             }`}>
               <Eye className="w-3.5 h-3.5 text-[#06B6D4] shrink-0" />
               <span className="text-neutral-200 font-medium">Mata</span>
-              <span className="text-[#06B6D4] text-[10px] font-semibold">{metrics.blinkRate}</span>
+              <span className="text-[#06B6D4] text-[10px] font-bold">{metrics.blinkRate}</span>
             </div>
 
-            {/* Sub-Pill 2: HP (Oranye #F97316) */}
-            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border shadow-[0_0_8px_rgba(249,115,22,0.25)] flex-1 justify-center ${
+            {/* Sub-Pill 2: HP (Oranye) */}
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-[0_0_8px_rgba(249,115,22,0.25)] flex-1 justify-center transition-all ${
               activeCategory === "phone" ? "bg-[#F97316]/30 border-[#F97316]" : "bg-[#F97316]/15 border-[#F97316]/35"
             }`}>
-              <Smartphone className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
+              <Timer className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
               <span className="text-neutral-200 font-medium">HP</span>
-              <span className="text-[#F97316] text-[10px] font-semibold">{metrics.phoneUsage}</span>
+              <span className="text-[#F97316] text-[10px] font-bold">{metrics.phoneUsage}</span>
             </div>
 
-            {/* Sub-Pill 3: Air (Biru Toska / Cyan #06B6D4) */}
-            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border shadow-[0_0_8px_rgba(6,182,212,0.25)] flex-1 justify-center ${
-              activeCategory === "hydration" ? "bg-[#06B6D4]/30 border-[#06B6D4]" : "bg-[#06B6D4]/15 border-[#06B6D4]/35"
+            {/* Sub-Pill 3: Air (Biru Langit) */}
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shadow-[0_0_8px_rgba(56,189,248,0.25)] flex-1 justify-center transition-all ${
+              activeCategory === "hydration" ? "bg-[#38bdf8]/30 border-[#38bdf8]" : "bg-[#38bdf8]/15 border-[#38bdf8]/35"
             }`}>
-              <Droplets className="w-3.5 h-3.5 text-[#06B6D4] shrink-0" />
+              <Droplets className="w-3.5 h-3.5 text-[#38bdf8] shrink-0" />
               <span className="text-neutral-200 font-medium">Air</span>
-              <span className="text-[#06B6D4] text-[10px] font-semibold">{metrics.hydration}</span>
+              <span className="text-[#38bdf8] text-[10px] font-bold">{metrics.hydration}</span>
             </div>
           </div>
         )}
 
         {/* =================================================================== */}
-        {/* 3. STATE: EXPANDED (Lebar: 410px, Border/Glow: Ungu #8B5CF6)        */}
+        {/* 3. STATE: EXPANDED (Card Grid 2x2 Sesuai Lovable Playful Island)    */}
         {/* =================================================================== */}
         {widgetState === "expanded" && (
           <div 
             onClick={(e) => e.stopPropagation()} 
-            className="w-full flex flex-col gap-3"
+            className="animate-pop-in flex h-full w-full flex-col"
           >
-            {/* Header: Logo, Nama, Jam Digital, dan Pin Toggle */}
-            <div className="w-full flex items-center justify-between border-b border-white/10 pb-2.5 z-10">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 flex items-center justify-center text-[#8B5CF6] shadow-[0_0_8px_rgba(139,92,246,0.3)]">
-                  <Activity className="w-3.5 h-3.5" />
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-xs font-bold text-white tracking-wide">NotchPulse</span>
-                  <span className="text-[9px] text-neutral-400">Dynamic Island Overlay</span>
-                </div>
+            {/* Header: Maskot Pulse, Title, Jam, Pin Toggle */}
+            <div className="flex items-center gap-2 pb-1.5">
+              <img 
+                src={mascotImg} 
+                alt="Pulse si maskot jelly lucu" 
+                className="h-10 w-10 shrink-0 object-contain drop-shadow-[0_0_12px_rgba(168,85,247,0.6)] animate-breathe" 
+              />
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-sm font-extrabold leading-tight text-white tracking-wide">NotchPulse</p>
+                <p className="truncate text-[9px] font-semibold text-neutral-400">Dynamic Island Overlay</p>
               </div>
-
-              <div className="flex items-center gap-2.5">
-                <span className="text-xs font-mono font-medium text-neutral-300">{currentTime}</span>
+              <div className="flex items-center gap-2">
+                <span className="font-display text-xs font-bold text-neutral-200">{currentTime}</span>
                 <button 
                   onClick={() => setPinned(!pinned)}
-                  title={pinned ? "Pinned (Tetap terbuka)" : "Auto-collapse 1.5s aktif"}
-                  className={`p-1.5 rounded-lg transition-colors border ${
+                  title={pinned ? "Pinned (Tetap terbuka)" : "Auto-collapse aktif"}
+                  className={`p-1.5 rounded-full transition-colors border ${
                     pinned 
-                      ? "bg-[#8B5CF6]/25 text-[#8B5CF6] border-[#8B5CF6]/60 shadow-[0_0_12px_rgba(139,92,246,0.4)]" 
+                      ? "bg-[#8B5CF6]/30 text-[#c084fc] border-[#8B5CF6]/60 shadow-[0_0_10px_rgba(139,92,246,0.5)]" 
                       : "bg-white/5 text-neutral-400 border-white/10 hover:text-white"
                   }`}
                 >
-                  {pinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
+                  {pinned ? <Pin className="w-3 h-3" /> : <PinOff className="w-3 h-3" />}
                 </button>
               </div>
             </div>
 
-            {/* Grid 2x2 Kartu Metrik Sesuai Desain */}
-            <div className="grid grid-cols-2 gap-2.5 z-10">
-              {/* Card 1: Kedip (Biru Toska / Cyan) */}
-              <div className="bg-[#101116] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#06B6D4]/40 transition-colors shadow-inner">
+            {/* Grid 2x2 Stat Cards Sesuai Lovable Playful Island */}
+            <div className="mt-2 grid flex-1 grid-cols-2 gap-2">
+              {/* Card 1: Kedip (Ok / Hijau) */}
+              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-neutral-300">Kedip</span>
-                  <Eye className="w-3.5 h-3.5 text-[#06B6D4]" />
+                  <span className="text-[10px] font-bold text-neutral-400">Kedip</span>
+                  <Eye className="h-3.5 w-3.5 text-[#22c55e]" />
                 </div>
-                <div className="text-base font-extrabold text-white font-mono">{metrics.blinkRate}</div>
-                <div className={`flex items-center gap-1 text-[10px] font-medium ${
-                  metrics.blinkStatus === "Normal" ? "text-[#22C55E]" : "text-[#F97316]"
-                }`}>
-                  <span>▲</span>
-                  <span>{metrics.blinkStatus}</span>
+                <p className="font-display mt-1 text-lg font-extrabold leading-none text-white font-mono">{metrics.blinkRate}</p>
+                <div className="mt-1">
+                  <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]">
+                    <TriangleAlert className="h-2.5 w-2.5" />
+                    {metrics.blinkStatus}
+                  </span>
                 </div>
               </div>
 
-              {/* Card 2: Air (Biru Toska / Cyan) */}
-              <div className="bg-[#101116] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#06B6D4]/40 transition-colors shadow-inner">
+              {/* Card 2: Air (Warn / Kuning Oranye) */}
+              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-neutral-300">Air</span>
-                  <Droplets className="w-3.5 h-3.5 text-[#06B6D4]" />
+                  <span className="text-[10px] font-bold text-neutral-400">Air</span>
+                  <Droplets className="h-3.5 w-3.5 text-[#eab308]" />
                 </div>
-                <div className="text-base font-extrabold text-white font-mono">{metrics.hydration}</div>
-                <div className={`flex items-center gap-1 text-[10px] font-medium ${
-                  metrics.hydrationStatus === "Baik" ? "text-[#22C55E]" : "text-[#FBBF24]"
-                }`}>
-                  <span>▲</span>
-                  <span>{metrics.hydrationStatus}</span>
+                <p className="font-display mt-1 text-lg font-extrabold leading-none text-white font-mono">{metrics.hydration}</p>
+                <div className="mt-1">
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${
+                    metrics.hydrationStatus === "Baik" 
+                      ? "border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]" 
+                      : "border-[#eab308]/40 bg-[#eab308]/10 text-[#eab308]"
+                  }`}>
+                    <TriangleAlert className="h-2.5 w-2.5" />
+                    {metrics.hydrationStatus}
+                  </span>
                 </div>
               </div>
 
-              {/* Card 3: HP (Oranye #F97316) */}
-              <div className="bg-[#101116] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#F97316]/40 transition-colors shadow-inner">
+              {/* Card 3: HP (Alert / Oranye) */}
+              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-neutral-300">HP</span>
-                  <Smartphone className="w-3.5 h-3.5 text-[#F97316]" />
+                  <span className="text-[10px] font-bold text-neutral-400">HP</span>
+                  <Timer className="h-3.5 w-3.5 text-[#f97316]" />
                 </div>
-                <div className="text-base font-extrabold text-white font-mono">{metrics.phoneUsage}</div>
-                <div className={`flex items-center gap-1 text-[10px] font-medium ${
-                  metrics.phoneStatus === "Aman" ? "text-[#22C55E]" : "text-[#F97316]"
-                }`}>
-                  <span>▲</span>
-                  <span>{metrics.phoneStatus}</span>
+                <p className="font-display mt-1 text-lg font-extrabold leading-none text-white font-mono">{metrics.phoneUsage}</p>
+                <div className="mt-1">
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${
+                    metrics.phoneStatus === "Aman" 
+                      ? "border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]" 
+                      : "border-[#f97316]/40 bg-[#f97316]/10 text-[#f97316]"
+                  }`}>
+                    <TriangleAlert className="h-2.5 w-2.5" />
+                    {metrics.phoneStatus}
+                  </span>
                 </div>
               </div>
 
-              {/* Card 4: Layar (Ungu #8B5CF6) */}
-              <div className="bg-[#101116] p-2.5 rounded-xl border border-white/5 flex flex-col gap-1 hover:border-[#8B5CF6]/40 transition-colors shadow-inner">
+              {/* Card 4: Layar (Rest / Ungu Neon) */}
+              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-neutral-300">Layar</span>
-                  <Monitor className="w-3.5 h-3.5 text-[#8B5CF6]" />
+                  <span className="text-[10px] font-bold text-neutral-400">Layar</span>
+                  <Monitor className="h-3.5 w-3.5 text-[#c084fc]" />
                 </div>
-                <div className="text-base font-extrabold text-white font-mono">{metrics.screenTime}</div>
-                <div className={`flex items-center gap-1 text-[10px] font-medium ${
-                  metrics.screenStatus === "Aman" ? "text-[#22C55E]" : "text-[#FBBF24]"
-                }`}>
-                  <span>▲</span>
-                  <span>{metrics.screenStatus}</span>
+                <p className="font-display mt-1 text-lg font-extrabold leading-none text-white font-mono">{metrics.screenTime}</p>
+                <div className="mt-1">
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${
+                    metrics.screenStatus === "Aman" 
+                      ? "border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]" 
+                      : "border-[#c084fc]/40 bg-[#c084fc]/10 text-[#c084fc]"
+                  }`}>
+                    <TriangleAlert className="h-2.5 w-2.5" />
+                    {metrics.screenStatus}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Quick Simulation / State Testing Footer */}
-            <div className="w-full flex items-center justify-between gap-1.5 pt-1 border-t border-white/10 text-[10px] z-10">
+            {/* Quick Action Navigation Footer */}
+            <div className="mt-2.5 flex items-center gap-1.5 pt-1">
               <button 
                 onClick={() => triggerSimulation("blink")}
-                className="flex-1 py-1 bg-[#06B6D4]/15 hover:bg-[#06B6D4]/30 border border-[#06B6D4]/30 rounded-lg text-[#06B6D4] font-medium transition-colors"
+                className="rounded-full border px-2.5 py-1 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/10 text-[#06b6d4]"
               >
                 Mata
               </button>
               <button 
                 onClick={() => triggerSimulation("phone")}
-                className="flex-1 py-1 bg-[#F97316]/15 hover:bg-[#F97316]/30 border border-[#F97316]/30 rounded-lg text-[#F97316] font-medium transition-colors"
+                className="rounded-full border px-2.5 py-1 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#f97316]/40 bg-[#f97316]/10 text-[#f97316]"
               >
                 HP
               </button>
               <button 
                 onClick={() => triggerSimulation("hydration")}
-                className="flex-1 py-1 bg-[#06B6D4]/15 hover:bg-[#06B6D4]/30 border border-[#06B6D4]/30 rounded-lg text-[#06B6D4] font-medium transition-colors"
+                className="rounded-full border px-2.5 py-1 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#38bdf8]/40 bg-[#38bdf8]/10 text-[#38bdf8]"
               >
                 Air
               </button>
               <button 
                 onClick={() => triggerSimulation("screentime")}
-                className="flex-1 py-1 bg-[#8B5CF6]/15 hover:bg-[#8B5CF6]/30 border border-[#8B5CF6]/30 rounded-lg text-[#8B5CF6] font-medium transition-colors"
+                className="rounded-full border px-2.5 py-1 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#c084fc]/40 bg-[#c084fc]/10 text-[#c084fc]"
               >
                 Layar
               </button>
               <button 
                 onClick={resetToIdle}
-                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-neutral-300 transition-colors flex items-center gap-1"
-                title="Kembali ke State Idle"
+                className="ml-auto rounded-full border border-white/10 bg-white/5 p-1.5 hover:bg-white/15 transition-colors"
+                title="Reset ke mode Idle"
               >
-                <RotateCcw className="w-3 h-3" />
+                <RefreshCcw className="h-3 w-3 text-neutral-300" />
               </button>
             </div>
           </div>
         )}
-      </div>
+      </button>
     </div>
   );
 }

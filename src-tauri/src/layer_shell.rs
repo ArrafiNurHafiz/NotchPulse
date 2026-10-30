@@ -80,14 +80,14 @@ pub fn setup_layer_shell(win: &WebviewWindow) -> bool {
 }
 
 fn apply_region(gw: &impl IsA<gtk::Widget>, x: f64, y: f64, width: f64, height: f64) {
-    if width >= 400.0 {
+    if width >= 300.0 {
         gw.input_shape_combine_region(None);
         if let Some(gdk_window) = gw.window() {
             let full_region = gtk::cairo::Region::create_rectangle(&gtk::cairo::RectangleInt::new(
                 0,
                 0,
                 460,
-                320,
+                380,
             ));
             gdk_window.input_shape_combine_region(&full_region, 0, 0);
         }

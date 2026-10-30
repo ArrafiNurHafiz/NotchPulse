@@ -136,29 +136,9 @@ export default function App() {
     return () => clearInterval(pollInterval);
   }, []);
 
-  // Auto-dismiss alert berdasarkan severity (Phase 4)
-  useEffect(() => {
-    if (widgetState !== "alert") return;
-
-    let dismissTimeout: number | null = null;
-    
-    if (alertSeverity === "info") {
-      dismissTimeout = window.setTimeout(() => {
-        setWidgetState("idle");
-        setActiveCategory("none");
-      }, 5000); // 5s untuk info
-    } else if (alertSeverity === "warning") {
-      dismissTimeout = window.setTimeout(() => {
-        setWidgetState("idle");
-        setActiveCategory("none");
-      }, 10000); // 10s untuk warning
-    }
-    // Critical: tidak auto-dismiss (persistent)
-
-    return () => {
-      if (dismissTimeout) window.clearTimeout(dismissTimeout);
-    };
-  }, [widgetState, alertSeverity]);
+  // [REMOVED] Auto-dismiss alert logic — diganti dengan polling-based auto-dismiss
+  // Polling loop di line 80-137 sudah handle idle detection dan auto-dismiss
+  // Tidak perlu timer tambahan yang conflict dengan real-time telemetry
 
   // Auto-collapse dengan debounce 3 detik saat mouse meninggalkan pulau (jika tidak di-pin)
   const handleMouseEnter = () => {

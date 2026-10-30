@@ -65,11 +65,11 @@ export default function App() {
 
   // Update input region dinamis ke Wayland layer-shell
   useEffect(() => {
-    let bounds = { x: 230.0, y: 0.0, width: 180.0, height: 48.0 };
+    let bounds = { x: 220.0, y: 0.0, width: 200.0, height: 48.0 };
     if (widgetState === "alert") {
-      bounds = { x: 140.0, y: 0.0, width: 360.0, height: 48.0 };
+      bounds = { x: 130.0, y: 0.0, width: 380.0, height: 48.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 140.0, y: 0.0, width: 360.0, height: 350.0 };
+      bounds = { x: 130.0, y: 0.0, width: 380.0, height: 390.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -183,19 +183,19 @@ export default function App() {
         onClick={handlePillClick}
         className={`island-shell relative z-20 cursor-pointer overflow-hidden flex flex-col items-center text-left ${
           widgetState === "idle"
-            ? "island-shell-idle h-12 w-44 rounded-full px-3 py-1.5 justify-center"
+            ? "island-shell-idle h-12 w-48 rounded-full px-4 py-1.5 justify-center"
             : widgetState === "alert"
-              ? "island-shell-alert h-12 w-[360px] rounded-full px-3 py-1.5 justify-center"
-              : "island-shell-expanded w-[360px] rounded-[2rem] px-4 pt-3.5 pb-4"
+              ? "island-shell-alert h-12 w-[380px] rounded-full px-4 py-1.5 justify-center"
+              : "island-shell-expanded w-[380px] min-h-[380px] rounded-[2.2rem] px-5 pt-3.5 pb-6"
         }`}
       >
         {/* =================================================================== */}
-        {/* 1. STATE: IDLE (h-12 w-44 rounded-full - Maskot Jelly & Waveform)   */}
+        {/* 1. STATE: IDLE (h-12 w-48 rounded-full - Maskot Jelly & Waveform)   */}
         {/* =================================================================== */}
         {widgetState === "idle" && (
-          <div className="w-full flex items-center justify-between z-10 px-0.5">
+          <div className="w-full flex items-center justify-between z-10 px-1">
             {/* Kiri: Maskot Jelly Pulse Mini Lucu */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 pl-0.5">
               <img 
                 src={mascotImg} 
                 alt="Pulse Maskot" 
@@ -204,9 +204,9 @@ export default function App() {
               <span className="text-xs font-bold text-white tracking-wide font-display">Pulse</span>
             </div>
 
-            {/* Kanan: Equalizer Waveform Ungu Neon */}
-            <div className="flex items-center gap-1">
-              <div className="flex items-end gap-0.5 h-3.5 text-[#c084fc]">
+            {/* Kanan: Equalizer Waveform Ungu Neon dengan Safe Padding */}
+            <div className="flex items-center gap-1 pr-1.5">
+              <div className="flex items-end gap-1 h-3.5 text-[#c084fc]">
                 <span className="w-1 bg-[#c084fc] rounded-full h-2 animate-pulse" />
                 <span className="w-1 bg-[#c084fc] rounded-full h-3.5 animate-pulse" style={{ animationDelay: "150ms" }} />
                 <span className="w-1 bg-[#c084fc] rounded-full h-2.5 animate-pulse" style={{ animationDelay: "300ms" }} />
@@ -360,37 +360,37 @@ export default function App() {
             </div>
 
             {/* Quick Action Navigation Footer - Safe Inset */}
-            <div className="mt-3 flex items-center justify-between gap-1.5 px-3 pb-1">
+            <div className="mt-3 flex items-center justify-center gap-2 px-1 pb-1">
               <button 
                 onClick={() => triggerSimulation("blink")}
-                className="rounded-full border px-2.5 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/10 text-[#06b6d4]"
+                className="rounded-full border px-3 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/10 text-[#06b6d4]"
               >
                 Mata
               </button>
               <button 
                 onClick={() => triggerSimulation("phone")}
-                className="rounded-full border px-2.5 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#f97316]/40 bg-[#f97316]/10 text-[#f97316]"
+                className="rounded-full border px-3 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#f97316]/40 bg-[#f97316]/10 text-[#f97316]"
               >
                 HP
               </button>
               <button 
                 onClick={() => triggerSimulation("hydration")}
-                className="rounded-full border px-2.5 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#38bdf8]/40 bg-[#38bdf8]/10 text-[#38bdf8]"
+                className="rounded-full border px-3 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#38bdf8]/40 bg-[#38bdf8]/10 text-[#38bdf8]"
               >
                 Air
               </button>
               <button 
                 onClick={() => triggerSimulation("screentime")}
-                className="rounded-full border px-2.5 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#c084fc]/40 bg-[#c084fc]/10 text-[#c084fc]"
+                className="rounded-full border px-3 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#c084fc]/40 bg-[#c084fc]/10 text-[#c084fc]"
               >
                 Layar
               </button>
               <button 
                 onClick={resetToIdle}
-                className="rounded-full border border-white/10 bg-white/5 p-1 hover:bg-white/15 transition-colors"
+                className="rounded-full border border-white/10 bg-white/5 p-1.5 hover:bg-white/15 transition-colors"
                 title="Reset ke mode Idle"
               >
-                <RefreshCcw className="h-3 w-3 text-neutral-300" />
+                <RefreshCcw className="h-3.5 w-3.5 text-neutral-300" />
               </button>
             </div>
           </div>

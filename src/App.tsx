@@ -376,7 +376,7 @@ export default function App() {
         {widgetState === "alert" && (
           <div 
             className={`w-full h-full flex items-center justify-between z-10 ${
-              alertSeverity === "critical" ? "animate-shake" : ""
+              alertSeverity === "critical" ? "animate-pulse" : ""
             }`}
             style={{ paddingLeft: "16px", paddingRight: "26px" }}
           >

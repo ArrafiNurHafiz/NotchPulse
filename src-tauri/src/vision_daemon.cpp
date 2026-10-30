@@ -456,12 +456,12 @@ int main() {
         std::string severity = "info";
         std::string alert_message = "Fokus Optimal";
 
-        // Phone distraction thresholds: Warning 8s, Critical 16s (berbasis continuous_phone_sec)
-        if (continuous_phone_sec >= 16.0) {
+        // Phone distraction thresholds: Warning 5s, Critical 12s (berbasis continuous_phone_sec)
+        if (continuous_phone_sec >= 12.0) {
             current_alert = "phone";
             severity = "critical";
             alert_message = "HP terlalu lama! Segera letakkan dan fokus.";
-        } else if (continuous_phone_sec >= 8.0) {
+        } else if (continuous_phone_sec >= 5.0) {
             current_alert = "phone";
             severity = "warning";
             alert_message = "HP terdeteksi. Selesaikan urusan lalu fokus.";

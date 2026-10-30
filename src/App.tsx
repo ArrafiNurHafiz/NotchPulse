@@ -69,7 +69,7 @@ export default function App() {
     if (widgetState === "alert") {
       bounds = { x: 80.0, y: 0.0, width: 360.0, height: 48.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 85.0, y: 0.0, width: 350.0, height: 320.0 };
+      bounds = { x: 80.0, y: 0.0, width: 360.0, height: 330.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -186,7 +186,7 @@ export default function App() {
             ? "island-shell-idle h-12 w-44 rounded-full px-3 py-1.5 justify-center"
             : widgetState === "alert"
               ? "island-shell-alert h-12 w-[360px] rounded-full px-3 py-1.5 justify-center"
-              : "island-shell-expanded w-[350px] rounded-[2rem] px-4 pt-3.5 pb-4"
+              : "island-shell-expanded w-[360px] rounded-[2rem] px-4 pt-3.5 pb-4"
         }`}
       >
         {/* =================================================================== */}
@@ -359,8 +359,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* Quick Action Navigation Footer */}
-            <div className="mt-2 flex items-center justify-between gap-1 pt-0.5">
+            {/* Quick Action Navigation Footer - Safe Inset */}
+            <div className="mt-3 flex items-center justify-between gap-1.5 px-3 pb-1">
               <button 
                 onClick={() => triggerSimulation("blink")}
                 className="rounded-full border px-2.5 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/10 text-[#06b6d4]"
@@ -387,7 +387,7 @@ export default function App() {
               </button>
               <button 
                 onClick={resetToIdle}
-                className="ml-auto rounded-full border border-white/10 bg-white/5 p-1 hover:bg-white/15 transition-colors"
+                className="rounded-full border border-white/10 bg-white/5 p-1 hover:bg-white/15 transition-colors"
                 title="Reset ke mode Idle"
               >
                 <RefreshCcw className="h-3 w-3 text-neutral-300" />

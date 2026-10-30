@@ -1,4 +1,5 @@
 mod vision_engine;
+mod adaptive_thresholds;
 mod db;
 mod layer_shell;
 
@@ -169,6 +170,11 @@ fn log_break_done(duration_sec: i32, state: State<'_, Arc<AppState>>) -> Result<
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let db_manager = DatabaseManager::new_in_memory().expect("Gagal inisialisasi basis data");
+    
+    // Inisialisasi baseline default untuk cold start
+    if let Err(e) = db_manager.init_default_baselines() {
+        eprintln!("Warn: Gagal inisialisasi baselines: {}", e);
+    }
 
     let shared_state = Arc::new(AppState {
         engine: Mutex::new(VisionPipelineEngine::new()),

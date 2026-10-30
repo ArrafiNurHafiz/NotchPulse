@@ -56,6 +56,15 @@ impl DatabaseManager {
                 value TEXT NOT NULL,
                 updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
+
+            CREATE TABLE IF NOT EXISTS user_baselines (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                metric_type TEXT NOT NULL UNIQUE,
+                rolling_mean REAL NOT NULL DEFAULT 0.0,
+                rolling_stddev REAL NOT NULL DEFAULT 1.0,
+                sample_count INTEGER NOT NULL DEFAULT 0,
+                last_updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
             "#,
         )?;
         Ok(())
@@ -124,6 +133,47 @@ impl DatabaseManager {
     // Catat poke maskot interaktif
     pub fn log_mascot_interaction(&self) -> Result<i64> {
         self.log_event(None, "mascot_poke", 0, "{}")
+    }
+
+    // === ADAPTIVE BASELINE MANAGEMENT ===
+    
+    // Ambil baseline untuk metric tertentu (phone, blink, screen, hydration)
+    pub fn get_baseline(&self, metric_type: &str) -> Result<Option<(f64, f64, i32)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT rolling_mean, rolling_stddev, sample_count FROM user_baselines WHERE metric_type = ?1"
+        )?;
+        let mut rows = stmt.query(params![metric_type])?;
+        if let Some(row) = rows.next()? {
+            Ok(Some((row.get(0)?, row.get(1)?, row.get(2)?)))
+        } else {
+            Ok(None)
+        }
+    }
+
+    // Update atau insert baseline
+    pub fn upsert_baseline(&self, metric_type: &str, mean: f64, stddev: f64, sample_count: i32) -> Result<()> {
+        self.conn.execute(
+            r#"
+            INSERT INTO user_baselines (metric_type, rolling_mean, rolling_stddev, sample_count, last_updated)
+            VALUES (?1, ?2, ?3, ?4, CURRENT_TIMESTAMP)
+            ON CONFLICT(metric_type) DO UPDATE SET
+                rolling_mean = excluded.rolling_mean,
+                rolling_stddev = excluded.rolling_stddev,
+                sample_count = excluded.sample_count,
+                last_updated = CURRENT_TIMESTAMP
+            "#,
+            params![metric_type, mean, stddev, sample_count],
+        )?;
+        Ok(())
+    }
+
+    // Inisialisasi baseline default untuk cold start
+    pub fn init_default_baselines(&self) -> Result<()> {
+        self.upsert_baseline("phone", 12.0, 4.0, 0)?;
+        self.upsert_baseline("blink", 14.0, 3.0, 0)?;
+        self.upsert_baseline("screen", 45.0, 15.0, 0)?;
+        self.upsert_baseline("hydration", 60.0, 15.0, 0)?;
+        Ok(())
     }
 }
 

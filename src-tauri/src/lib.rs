@@ -276,3 +276,57 @@ pub fn run() {
             }
         });
 }
+
+#[cfg(test)]
+mod e2e_scenarios {
+    use super::decision_engine::{DecisionEngine, AlertType, Severity};
+    use super::adaptive_thresholds::ActivityType;
+
+    #[test]
+    fn test_scenario_normal_work_session() {
+        let mut engine = DecisionEngine::new();
+        let now = 1000000i64;
+
+        let alert_phone = engine.evaluate_phone_distraction(0.0, ActivityType::Work, now);
+        let alert_blink = engine.evaluate_blink_fatigue(15.0, 1800, ActivityType::Work, now);
+        let alert_screen = engine.evaluate_screen_time(30.0, ActivityType::Work, now);
+        let alert_hydration = engine.evaluate_hydration(30.0, now);
+
+        assert!(alert_phone.is_none(), "Normal session should not trigger phone alert");
+        assert!(alert_blink.is_none(), "Normal blink rate should not trigger fatigue alert");
+        assert!(alert_screen.is_none(), "30 min screen time is within limits");
+        assert!(alert_hydration.is_none(), "30 min hydration is within limits");
+    }
+
+    #[test]
+    fn test_scenario_fatigue_detection() {
+        let mut engine = DecisionEngine::new();
+        let now = 1000000i64;
+
+        let alert_blink = engine.evaluate_blink_fatigue(4.0, 2700, ActivityType::Work, now);
+        assert!(alert_blink.is_some(), "Fatigue should trigger blink alert");
+        let decision = alert_blink.unwrap();
+        assert_eq!(decision.severity, Severity::Critical);
+        assert_eq!(decision.alert_type, AlertType::Blink);
+    }
+
+    #[test]
+    fn test_scenario_phone_distraction() {
+        let mut engine = DecisionEngine::new();
+        let now = 1000000i64;
+
+        let alert = engine.evaluate_phone_distraction(35.0, ActivityType::Work, now);
+        assert!(alert.is_some(), "35s phone should trigger alert");
+    }
+
+    #[test]
+    fn test_scenario_hydration_reminder() {
+        let mut engine = DecisionEngine::new();
+        let now = 1000000i64;
+
+        let alert = engine.evaluate_hydration(100.0, now);
+        assert!(alert.is_some(), "100 mins without water should trigger alert");
+        let decision = alert.unwrap();
+        assert_eq!(decision.alert_type, AlertType::Hydration);
+    }
+}

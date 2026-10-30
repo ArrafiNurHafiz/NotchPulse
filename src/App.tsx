@@ -69,7 +69,7 @@ export default function App() {
     if (widgetState === "alert") {
       bounds = { x: 50.0, y: 0.0, width: 360.0, height: 48.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 45.0, y: 0.0, width: 370.0, height: 390.0 };
+      bounds = { x: 50.0, y: 0.0, width: 360.0, height: 260.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -97,10 +97,10 @@ export default function App() {
     listen<EventPayload>("optihabit://event", (event) => {
       const type = event.payload.alert_type.toLowerCase();
       if (type !== "idle" && type !== "none") {
-        setWidgetState(prev => prev === "expanded" ? "expanded" : "alert");
+        setWidgetState(prev => (prev === "expanded" || pinned) ? prev : "alert");
         setActiveCategory(type as AlertCategory);
       } else {
-        setWidgetState(prev => prev === "expanded" ? "expanded" : (pinned ? prev : "idle"));
+        setWidgetState(prev => (prev === "expanded" || pinned) ? prev : "idle");
         setActiveCategory("none");
       }
     }).then(unsub => { unlistenEvent = unsub; });
@@ -186,7 +186,7 @@ export default function App() {
             ? "island-shell-idle h-12 w-44 rounded-full px-3 py-1.5 justify-center"
             : widgetState === "alert"
               ? "island-shell-alert h-12 w-[360px] rounded-full px-3 py-1.5 justify-center"
-              : "island-shell-expanded min-h-[370px] w-[350px] rounded-[2.2rem] px-4 pt-3.5 pb-5"
+              : "island-shell-expanded w-[340px] rounded-[1.8rem] px-3.5 pt-3 pb-3.5"
         }`}
       >
         {/* =================================================================== */}
@@ -255,18 +255,18 @@ export default function App() {
         {widgetState === "expanded" && (
           <div 
             onClick={(e) => e.stopPropagation()} 
-            className="animate-pop-in flex h-full w-full flex-col"
+            className="animate-pop-in flex flex-col w-full gap-2"
           >
             {/* Header: Maskot Pulse, Title, Jam, Pin Toggle */}
-            <div className="flex items-center gap-2 pb-1.5">
+            <div className="flex items-center gap-2 pb-1">
               <img 
                 src={mascotImg} 
                 alt="Pulse si maskot jelly lucu" 
-                className="h-10 w-10 shrink-0 object-contain drop-shadow-[0_0_12px_rgba(168,85,247,0.6)] animate-breathe" 
+                className="h-8 w-8 shrink-0 object-contain drop-shadow-[0_0_12px_rgba(168,85,247,0.6)] animate-breathe" 
               />
               <div className="min-w-0 flex-1">
-                <p className="font-display text-sm font-extrabold leading-tight text-white tracking-wide">NotchPulse</p>
-                <p className="truncate text-[9px] font-semibold text-neutral-400">Dynamic Island Overlay</p>
+                <p className="font-display text-xs font-extrabold leading-tight text-white tracking-wide">NotchPulse</p>
+                <p className="truncate text-[8px] font-semibold text-neutral-400">Dynamic Island Overlay</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-display text-xs font-bold text-neutral-200">{currentTime}</span>
@@ -285,74 +285,74 @@ export default function App() {
             </div>
 
             {/* Grid 2x2 Stat Cards Sesuai Lovable Playful Island */}
-            <div className="mt-2.5 grid flex-1 grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-2">
               {/* Card 1: Kedip (Ok / Hijau) */}
-              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
+              <div className="stat-card relative rounded-xl p-2 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-neutral-400">Kedip</span>
-                  <Eye className="h-3.5 w-3.5 text-[#22c55e]" />
+                  <span className="text-[9px] font-bold text-neutral-400">Kedip</span>
+                  <Eye className="h-3 w-3 text-[#22c55e]" />
                 </div>
-                <p className="font-display my-1 text-base font-extrabold leading-none text-white font-mono">{metrics.blinkRate}</p>
+                <p className="font-display my-0.5 text-sm font-extrabold leading-none text-white font-mono">{metrics.blinkRate}</p>
                 <div>
-                  <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]">
-                    <TriangleAlert className="h-2.5 w-2.5" />
+                  <span className="inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[8px] font-bold border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]">
+                    <TriangleAlert className="h-2 w-2" />
                     {metrics.blinkStatus}
                   </span>
                 </div>
               </div>
 
               {/* Card 2: Air (Warn / Kuning Oranye) */}
-              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
+              <div className="stat-card relative rounded-xl p-2 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-neutral-400">Air</span>
-                  <Droplets className="h-3.5 w-3.5 text-[#eab308]" />
+                  <span className="text-[9px] font-bold text-neutral-400">Air</span>
+                  <Droplets className="h-3 w-3 text-[#eab308]" />
                 </div>
-                <p className="font-display my-1 text-base font-extrabold leading-none text-white font-mono">{metrics.hydration}</p>
+                <p className="font-display my-0.5 text-sm font-extrabold leading-none text-white font-mono">{metrics.hydration}</p>
                 <div>
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${
+                  <span className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[8px] font-bold ${
                     metrics.hydrationStatus === "Baik" 
                       ? "border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]" 
                       : "border-[#eab308]/40 bg-[#eab308]/10 text-[#eab308]"
                   }`}>
-                    <TriangleAlert className="h-2.5 w-2.5" />
+                    <TriangleAlert className="h-2 w-2" />
                     {metrics.hydrationStatus}
                   </span>
                 </div>
               </div>
 
               {/* Card 3: HP (Alert / Oranye) */}
-              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
+              <div className="stat-card relative rounded-xl p-2 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-neutral-400">HP</span>
-                  <Timer className="h-3.5 w-3.5 text-[#f97316]" />
+                  <span className="text-[9px] font-bold text-neutral-400">HP</span>
+                  <Timer className="h-3 w-3 text-[#f97316]" />
                 </div>
-                <p className="font-display my-1 text-base font-extrabold leading-none text-white font-mono">{metrics.phoneUsage}</p>
+                <p className="font-display my-0.5 text-sm font-extrabold leading-none text-white font-mono">{metrics.phoneUsage}</p>
                 <div>
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${
+                  <span className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[8px] font-bold ${
                     metrics.phoneStatus === "Aman" 
                       ? "border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]" 
                       : "border-[#f97316]/40 bg-[#f97316]/10 text-[#f97316]"
                   }`}>
-                    <TriangleAlert className="h-2.5 w-2.5" />
+                    <TriangleAlert className="h-2 w-2" />
                     {metrics.phoneStatus}
                   </span>
                 </div>
               </div>
 
               {/* Card 4: Layar (Rest / Ungu Neon) */}
-              <div className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between">
+              <div className="stat-card relative rounded-xl p-2 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-neutral-400">Layar</span>
-                  <Monitor className="h-3.5 w-3.5 text-[#c084fc]" />
+                  <span className="text-[9px] font-bold text-neutral-400">Layar</span>
+                  <Monitor className="h-3 w-3 text-[#c084fc]" />
                 </div>
-                <p className="font-display my-1 text-base font-extrabold leading-none text-white font-mono">{metrics.screenTime}</p>
+                <p className="font-display my-0.5 text-sm font-extrabold leading-none text-white font-mono">{metrics.screenTime}</p>
                 <div>
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-bold ${
+                  <span className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[8px] font-bold ${
                     metrics.screenStatus === "Aman" 
                       ? "border-[#22c55e]/40 bg-[#22c55e]/10 text-[#22c55e]" 
                       : "border-[#c084fc]/40 bg-[#c084fc]/10 text-[#c084fc]"
                   }`}>
-                    <TriangleAlert className="h-2.5 w-2.5" />
+                    <TriangleAlert className="h-2 w-2" />
                     {metrics.screenStatus}
                   </span>
                 </div>
@@ -360,37 +360,37 @@ export default function App() {
             </div>
 
             {/* Quick Action Navigation Footer */}
-            <div className="mt-3 flex items-center justify-between gap-1.5 pt-0.5">
+            <div className="flex items-center justify-between gap-1 pt-1">
               <button 
                 onClick={() => triggerSimulation("blink")}
-                className="rounded-full border px-3 py-1.5 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/10 text-[#06b6d4]"
+                className="rounded-full border px-2.5 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/10 text-[#06b6d4]"
               >
                 Mata
               </button>
               <button 
                 onClick={() => triggerSimulation("phone")}
-                className="rounded-full border px-3 py-1.5 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#f97316]/40 bg-[#f97316]/10 text-[#f97316]"
+                className="rounded-full border px-2.5 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#f97316]/40 bg-[#f97316]/10 text-[#f97316]"
               >
                 HP
               </button>
               <button 
                 onClick={() => triggerSimulation("hydration")}
-                className="rounded-full border px-3 py-1.5 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#38bdf8]/40 bg-[#38bdf8]/10 text-[#38bdf8]"
+                className="rounded-full border px-2.5 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#38bdf8]/40 bg-[#38bdf8]/10 text-[#38bdf8]"
               >
                 Air
               </button>
               <button 
                 onClick={() => triggerSimulation("screentime")}
-                className="rounded-full border px-3 py-1.5 text-[10px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#c084fc]/40 bg-[#c084fc]/10 text-[#c084fc]"
+                className="rounded-full border px-2.5 py-1 text-[9px] font-bold transition-transform hover:scale-105 active:scale-95 border-[#c084fc]/40 bg-[#c084fc]/10 text-[#c084fc]"
               >
                 Layar
               </button>
               <button 
                 onClick={resetToIdle}
-                className="ml-auto rounded-full border border-white/10 bg-white/5 p-1.5 hover:bg-white/15 transition-colors"
+                className="ml-auto rounded-full border border-white/10 bg-white/5 p-1 hover:bg-white/15 transition-colors"
                 title="Reset ke mode Idle"
               >
-                <RefreshCcw className="h-3.5 w-3.5 text-neutral-300" />
+                <RefreshCcw className="h-3 w-3 text-neutral-300" />
               </button>
             </div>
           </div>

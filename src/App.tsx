@@ -69,7 +69,7 @@ export default function App() {
     if (widgetState === "alert") {
       bounds = { x: 130.0, y: 0.0, width: 380.0, height: 48.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 130.0, y: 0.0, width: 380.0, height: 390.0 };
+      bounds = { x: 130.0, y: 0.0, width: 380.0, height: 235.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -186,7 +186,7 @@ export default function App() {
             ? "island-shell-idle h-12 w-48 rounded-full px-4 py-1.5 justify-center"
             : widgetState === "alert"
               ? "island-shell-alert h-12 w-[380px] rounded-full px-4 py-1.5 justify-center"
-              : "island-shell-expanded w-[380px] min-h-[380px] rounded-[2.2rem] px-5 pt-3.5 pb-6"
+              : "island-shell-expanded w-[370px] h-auto rounded-[2rem] px-4 pt-3 pb-3.5"
         }`}
       >
         {/* =================================================================== */}

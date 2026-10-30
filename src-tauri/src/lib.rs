@@ -248,6 +248,14 @@ pub fn run() {
                                 tel.screen_time_minutes = (snap.screen_time_seconds / 60) as u32;
                                 tel.hydration_count = snap.hydration_count;
                                 tel.phone_distraction_seconds = snap.phone_distraction_seconds;
+                                // Update current_alert from vision daemon snapshot
+                                tel.current_alert = match snap.current_alert.as_str() {
+                                    "phone" => AlertType::Phone,
+                                    "blink" => AlertType::Blink,
+                                    "screentime" => AlertType::ScreenTime,
+                                    "hydration" => AlertType::Hydration,
+                                    _ => AlertType::Idle,
+                                };
                                 let _ = handle.emit("optihabit://telemetry", &*tel);
                             }
 

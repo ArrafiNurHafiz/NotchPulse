@@ -10,18 +10,10 @@ import {
   Sparkles
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import mascotImg from "./assets/island_mascot.png";
 
 type WidgetState = "idle" | "alert" | "expanded";
 type AlertCategory = "none" | "blink" | "phone" | "hydration" | "screentime";
-
-interface EventPayload {
-  alert_type: string;
-  title: string;
-  message: string;
-  timestamp_ms: number;
-}
 
 interface TelemetrySnapshot {
   focus_score: number;
@@ -84,16 +76,15 @@ export default function App() {
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
 
-  // Listen stream event telemetri riil dari daemon
+  // Polling telemetri otomatis setiap 400ms (bypass Wayland layer-shell IPC issue)
   useEffect(() => {
-    let unlistenEvent: (() => void) | undefined;
-    let unlistenTelemetry: (() => void) | undefined;
-
-    invoke<TelemetrySnapshot>("get_current_telemetry")
-      .then((data) => {
+    console.log("[POLLING] Starting telemetry poll loop");
+    const pollInterval = setInterval(async () => {
+      try {
+        const data = await invoke<TelemetrySnapshot>("get_current_telemetry");
         if (data) {
-          if (data.severity) setAlertSeverity(data.severity);
-          if (data.reasoning) setAlertReasoning(data.reasoning);
+          console.log("[POLLING] Telemetry:", data.current_alert, data.phone_distraction_seconds);
+          // Update metrics display
           setMetrics(prev => ({
             ...prev,
             focusScore: data.focus_score || 85,
@@ -101,46 +92,30 @@ export default function App() {
             screenTime: `${(data.screen_time_minutes || 0) * 60}s`,
             hydration: `${data.hydration_count || 0}x`,
             phoneUsage: `${data.phone_distraction_seconds || 0}s`,
+            blinkStatus: data.blink_rate >= 10 ? "Normal" : "Kurang",
+            phoneStatus: data.phone_distraction_seconds > 4 ? "Terlalu lama" : "Aman",
+            hydrationStatus: data.hydration_count > 0 ? "Baik" : "Perlu minum",
+            screenStatus: data.screen_time_minutes >= 20 ? "Perlu istirahat" : "Aman"
           }));
+
+          // Detect alert state change → auto-trigger UI transition
+          const currentAlertStr = String(data.current_alert || "idle").toLowerCase();
+          console.log("[POLLING] Alert check:", currentAlertStr);
+          if (currentAlertStr !== "idle" && currentAlertStr !== "none") {
+            console.log("[POLLING] ALERT DETECTED! Setting state to 'alert'");
+            setActiveCategory(currentAlertStr as AlertCategory);
+            setWidgetState("alert");  // Force alert state immediately
+            if (data.severity) setAlertSeverity(data.severity as any);
+            if (data.reasoning) setAlertReasoning(data.reasoning || "");
+          }
         }
-      })
-      .catch(() => {});
-
-    listen<EventPayload>("optihabit://event", (event) => {
-      console.log("[DEBUG] Received optihabit://event:", event.payload);
-      const type = event.payload.alert_type.toLowerCase();
-      if (type !== "idle" && type !== "none") {
-        setActiveCategory(type as AlertCategory);
-        setWidgetState("alert");  // Force alert state immediately, no conditional
-      } else {
-        setActiveCategory("none");
-        setWidgetState(pinned ? "expanded" : "idle");  // Only force idle if not pinned
+      } catch (err) {
+        console.error("[POLLING] Error:", err);
       }
-    }).then(unsub => { unlistenEvent = unsub; });
+    }, 400);  // 400ms = 2.5x per second for responsive UI
 
-    listen<TelemetrySnapshot>("optihabit://telemetry", (event) => {
-      const data = event.payload;
-      if (data.severity) setAlertSeverity(data.severity);
-      if (data.reasoning) setAlertReasoning(data.reasoning);
-      setMetrics(prev => ({
-        ...prev,
-        focusScore: data.focus_score,
-        blinkRate: `${data.blink_rate}/min`,
-        screenTime: `${data.screen_time_minutes * 60}s`,
-        hydration: `${data.hydration_count}x`,
-        phoneUsage: `${data.phone_distraction_seconds}s`,
-        blinkStatus: data.blink_rate >= 10 ? "Normal" : "Kurang",
-        phoneStatus: data.phone_distraction_seconds > 4 ? "Terlalu lama" : "Aman",
-        hydrationStatus: data.hydration_count > 0 ? "Baik" : "Perlu minum",
-        screenStatus: data.screen_time_minutes >= 20 ? "Perlu istirahat" : "Aman"
-      }));
-    }).then(unsub => { unlistenTelemetry = unsub; });
-
-    return () => {
-      if (unlistenEvent) unlistenEvent();
-      if (unlistenTelemetry) unlistenTelemetry();
-    };
-  }, [pinned]);
+    return () => clearInterval(pollInterval);
+  }, []);
 
   // Auto-dismiss alert berdasarkan severity (Phase 4)
   useEffect(() => {

@@ -122,9 +122,16 @@ export default function App() {
               if (data.severity) setAlertSeverity(data.severity as any);
               if (data.reasoning) setAlertReasoning(data.reasoning || "");
             } else {
-              console.log("[POLLING] IDLE STABLE! Resetting to idle");
-              setActiveCategory("none");
-              setWidgetState("idle");
+              // Hanya reset ke idle jika sebelumnya sedang alert!
+              // JANGAN paksa tutup jika user sedang membuka dashboard (expanded) secara manual!
+              setWidgetState((prevState) => {
+                if (prevState === "alert") {
+                  console.log("[POLLING] IDLE STABLE! Dismissing alert back to idle");
+                  setActiveCategory("none");
+                  return "idle";
+                }
+                return prevState;
+              });
             }
           }
         }

@@ -65,11 +65,11 @@ export default function App() {
 
   // Update input region dinamis ke Wayland layer-shell
   useEffect(() => {
-    let bounds = { x: 170.0, y: 0.0, width: 180.0, height: 48.0 };
+    let bounds = { x: 230.0, y: 0.0, width: 180.0, height: 48.0 };
     if (widgetState === "alert") {
-      bounds = { x: 80.0, y: 0.0, width: 360.0, height: 48.0 };
+      bounds = { x: 140.0, y: 0.0, width: 360.0, height: 48.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 80.0, y: 0.0, width: 360.0, height: 330.0 };
+      bounds = { x: 140.0, y: 0.0, width: 360.0, height: 350.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);

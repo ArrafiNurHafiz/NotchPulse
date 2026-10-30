@@ -12,8 +12,8 @@
       {
         "label": "island",
         "title": "NotchPulse Island",
-        "width": 520,
-        "height": 450,
+        "width": 640,
+        "height": 520,
         "resizable": false,
         "decorations": false,
         "transparent": true,

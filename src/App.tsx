@@ -65,9 +65,9 @@ export default function App() {
 
   // Update input region dinamis ke Wayland layer-shell
   useEffect(() => {
-    let bounds = { x: 180.0, y: 0.0, width: 280.0, height: 56.0 };
+    let bounds = { x: 175.0, y: 0.0, width: 290.0, height: 56.0 };
     if (widgetState === "alert") {
-      bounds = { x: 135.0, y: 0.0, width: 370.0, height: 56.0 };
+      bounds = { x: 120.0, y: 0.0, width: 400.0, height: 56.0 };
     } else if (widgetState === "expanded") {
       bounds = { x: 115.0, y: 0.0, width: 410.0, height: 265.0 };
     }
@@ -186,31 +186,31 @@ export default function App() {
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handlePillClick(); }}
         className={`island-shell relative z-20 cursor-pointer overflow-hidden flex flex-col items-center text-left ${
           widgetState === "idle"
-            ? "island-shell-idle h-14 w-[280px] rounded-full justify-center"
+            ? "island-shell-idle h-14 w-[290px] rounded-full justify-center"
             : widgetState === "alert"
-              ? "island-shell-alert h-14 w-[370px] rounded-full justify-center"
+              ? "island-shell-alert h-14 w-[400px] rounded-full justify-center"
               : "island-shell-expanded w-[410px] h-auto rounded-[2.2rem] px-5 pt-3.5 pb-4"
         }`}
       >
         {/* =================================================================== */}
-        {/* 1. STATE: IDLE (h-14 w-[280px] rounded-full - Maskot Jelly & Waveform) */}
+        {/* 1. STATE: IDLE (h-14 w-[290px] rounded-full - Maskot Jelly & Waveform) */}
         {/* =================================================================== */}
         {widgetState === "idle" && (
           <div 
             className="w-full flex items-center justify-between z-10"
-            style={{ paddingLeft: "22px", paddingRight: "32px" }}
+            style={{ paddingLeft: "20px", paddingRight: "32px" }}
           >
-            {/* Kiri: Maskot Jelly Pulse Mini Lucu */}
+            {/* Kiri: Maskot Jelly Pulse Lucu (Besar & Glossy) */}
             <div className="flex items-center gap-2.5">
               <div className="relative flex items-center justify-center">
-                <div className="absolute w-7 h-7 bg-purple-500/30 rounded-full blur-md animate-soft-glow" />
+                <div className="absolute w-9 h-9 bg-purple-500/35 rounded-full blur-md animate-soft-glow" />
                 <img 
                   src={mascotImg} 
                   alt="Pulse Maskot Jelly" 
-                  className="w-8 h-8 object-contain relative z-10 animate-breathe drop-shadow-[0_0_10px_rgba(168,85,247,0.6)]" 
+                  className="w-10 h-10 object-contain relative z-10 animate-breathe drop-shadow-[0_0_12px_rgba(168,85,247,0.7)]" 
                 />
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <span className="text-sm font-black text-white tracking-wide font-display">Pulse</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-pink-400 animate-pulse" />
               </div>
@@ -232,91 +232,92 @@ export default function App() {
         {/* =================================================================== */}
         {widgetState === "alert" && (
           <div 
-            className="w-full h-full flex items-center justify-between z-10 px-3.5"
+            className="w-full h-full flex items-center justify-between z-10"
+            style={{ paddingLeft: "16px", paddingRight: "26px" }}
           >
-            {/* Kiri: Maskot Jelly Pulse Mini dengan Animasi */}
+            {/* Kiri: Maskot Jelly Pulse Besar 3D dengan Animasi */}
             <div className="flex items-center gap-2 shrink-0">
               <div className="relative flex items-center justify-center">
-                <div className="absolute w-8 h-8 bg-pink-500/35 rounded-full blur-md animate-soft-glow" />
+                <div className="absolute w-10 h-10 bg-pink-500/35 rounded-full blur-md animate-soft-glow" />
                 <img 
                   src={mascotImg} 
                   alt="Pulse Maskot" 
-                  className="w-8 h-8 object-contain relative z-10 animate-breathe drop-shadow-[0_0_10px_rgba(244,63,94,0.6)]" 
+                  className="w-11 h-11 object-contain relative z-10 animate-breathe drop-shadow-[0_0_14px_rgba(244,63,94,0.7)]" 
                 />
               </div>
             </div>
 
             {/* Tengah: Pesan Status Dinamis Banner */}
-            <div className="min-w-0 flex-1 px-2.5">
+            <div className="min-w-0 flex-1 px-3">
               {activeCategory === "phone" ? (
                 <div>
-                  <p className="font-display text-[11px] font-black leading-tight text-[#f97316] tracking-wide truncate">
+                  <p className="font-display text-[11.5px] font-black leading-tight text-[#f97316] tracking-wide truncate">
                     HP Terlalu Lama!
                   </p>
-                  <p className="truncate text-[8.5px] font-semibold text-neutral-300">
+                  <p className="truncate text-[9px] font-semibold text-neutral-300">
                     Yuk istirahat sejenak 📱
                   </p>
                 </div>
               ) : activeCategory === "blink" ? (
                 <div>
-                  <p className="font-display text-[11px] font-black leading-tight text-[#06b6d4] tracking-wide truncate">
+                  <p className="font-display text-[11.5px] font-black leading-tight text-[#06b6d4] tracking-wide truncate">
                     Kedip Matamu!
                   </p>
-                  <p className="truncate text-[8.5px] font-semibold text-neutral-300">
+                  <p className="truncate text-[9px] font-semibold text-neutral-300">
                     Cegah mata lelah & kering 👀
                   </p>
                 </div>
               ) : activeCategory === "hydration" ? (
                 <div>
-                  <p className="font-display text-[11px] font-black leading-tight text-[#38bdf8] tracking-wide truncate">
+                  <p className="font-display text-[11.5px] font-black leading-tight text-[#38bdf8] tracking-wide truncate">
                     Waktunya Minum Air!
                   </p>
-                  <p className="truncate text-[8.5px] font-semibold text-neutral-300">
+                  <p className="truncate text-[9px] font-semibold text-neutral-300">
                     Jaga hidrasi & fokus tubuh 💧
                   </p>
                 </div>
               ) : activeCategory === "screentime" ? (
                 <div>
-                  <p className="font-display text-[11px] font-black leading-tight text-[#c084fc] tracking-wide truncate">
+                  <p className="font-display text-[11.5px] font-black leading-tight text-[#c084fc] tracking-wide truncate">
                     Aturan 20-20-20!
                   </p>
-                  <p className="truncate text-[8.5px] font-semibold text-neutral-300">
+                  <p className="truncate text-[9px] font-semibold text-neutral-300">
                     Lihat objek jauh 20 detik 🌿
                   </p>
                 </div>
               ) : (
                 <div>
-                  <p className="font-display text-[11px] font-black leading-tight text-purple-300 tracking-wide truncate">
+                  <p className="font-display text-[11.5px] font-black leading-tight text-purple-300 tracking-wide truncate">
                     NotchPulse Siaga
                   </p>
-                  <p className="truncate text-[8.5px] font-semibold text-neutral-300">
+                  <p className="truncate text-[9px] font-semibold text-neutral-300">
                     Memantau pola sehatmu ✨
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Kanan: Badge Metrik Aktif dengan Dot Berdenyut */}
+            {/* Kanan: Badge Metrik Aktif dengan Margin Aman dari Lengkungan */}
             <div className="shrink-0">
               {activeCategory === "phone" ? (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#f97316]/50 bg-[#f97316]/20 shadow-[0_0_12px_rgba(249,115,22,0.4)]">
+                <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#f97316]/50 bg-[#f97316]/25 shadow-[0_0_14px_rgba(249,115,22,0.45)]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] animate-pulse" />
-                  <span className="text-[#f97316] text-[10px] font-mono font-black">{metrics.phoneUsage}</span>
+                  <span className="text-[#f97316] text-[10.5px] font-mono font-black">{metrics.phoneUsage}</span>
                 </div>
               ) : activeCategory === "blink" ? (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#06b6d4]/50 bg-[#06b6d4]/20 shadow-[0_0_12px_rgba(6,182,212,0.4)]">
+                <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#06b6d4]/50 bg-[#06b6d4]/25 shadow-[0_0_14px_rgba(6,182,212,0.45)]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#06b6d4] animate-pulse" />
-                  <span className="text-[#06b6d4] text-[10px] font-mono font-black">{metrics.blinkRate}</span>
+                  <span className="text-[#06b6d4] text-[10.5px] font-mono font-black">{metrics.blinkRate}</span>
                 </div>
               ) : activeCategory === "hydration" ? (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#38bdf8]/50 bg-[#38bdf8]/20 shadow-[0_0_12px_rgba(56,189,248,0.4)]">
+                <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#38bdf8]/50 bg-[#38bdf8]/25 shadow-[0_0_14px_rgba(56,189,248,0.45)]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] animate-pulse" />
-                  <span className="text-[#38bdf8] text-[10px] font-mono font-black">{metrics.hydration}</span>
+                  <span className="text-[#38bdf8] text-[10.5px] font-mono font-black">{metrics.hydration}</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#c084fc]/50 bg-[#c084fc]/20 shadow-[0_0_12px_rgba(192,132,252,0.4)]">
+                <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#c084fc]/50 bg-[#c084fc]/25 shadow-[0_0_14px_rgba(192,132,252,0.45)]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#c084fc] animate-pulse" />
-                  <span className="text-[#c084fc] text-[10px] font-mono font-black">{metrics.screenTime}</span>
+                  <span className="text-[#c084fc] text-[10.5px] font-mono font-black">{metrics.screenTime}</span>
                 </div>
               )}
             </div>
@@ -331,14 +332,14 @@ export default function App() {
             onClick={(e) => e.stopPropagation()} 
             className="animate-pop-in flex flex-col w-full max-w-[370px] mx-auto gap-2.5"
           >
-            {/* Header: Maskot Pulse Lucu, Title & Tagline, Jam, Pin Toggle */}
+            {/* Header: Maskot Pulse Lucu (Besar & Juicy), Title & Tagline, Jam, Pin Toggle */}
             <div className="flex items-center gap-2.5 pb-0.5">
               <div className="relative flex items-center justify-center shrink-0">
-                <div className="absolute w-9 h-9 bg-purple-500/35 rounded-full blur-md animate-soft-glow" />
+                <div className="absolute w-12 h-12 bg-purple-500/35 rounded-full blur-lg animate-soft-glow" />
                 <img 
                   src={mascotImg} 
                   alt="Pulse si maskot jelly lucu" 
-                  className="h-9 w-9 object-contain relative z-10 drop-shadow-[0_0_12px_rgba(168,85,247,0.7)] animate-breathe" 
+                  className="h-12 w-12 object-contain relative z-10 drop-shadow-[0_0_16px_rgba(168,85,247,0.75)] animate-breathe" 
                 />
               </div>
               <div className="min-w-0 flex-1">

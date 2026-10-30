@@ -71,7 +71,7 @@ export default function App() {
     if (widgetState === "alert") {
       bounds = { x: 120.0, y: 0.0, width: 400.0, height: 56.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 100.0, y: 0.0, width: 430.0, height: 340.0 };
+      bounds = { x: 95.0, y: 0.0, width: 440.0, height: 380.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -528,7 +528,7 @@ export default function App() {
         {widgetState === "expanded" && (
           <div 
             onClick={(e) => e.stopPropagation()} 
-            className="animate-pop-in flex flex-col w-full max-w-[400px] mx-auto gap-5 px-2"
+            className="animate-pop-in flex flex-col w-full max-w-[400px] mx-auto gap-5 px-2 pb-3"
           >
             {/* Header: Premium Branding + Better Typography */}
             <div className="flex items-center gap-3.5">
@@ -578,11 +578,11 @@ export default function App() {
             </div>
 
             {/* Bento Grid 2x2 Doppelrand Glass Cards (Interaktif Click & Hover) */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               {/* Card 1: Kedip (Emerald Mint Glow) */}
               <div 
                 onClick={() => triggerSimulation("blink")}
-                className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                className="stat-card relative group cursor-pointer"
                 title="Klik untuk simulasi alert kedipan"
               >
                 <div className="flex items-center justify-between">
@@ -603,7 +603,7 @@ export default function App() {
               {/* Card 2: Air (Ocean Sky Blue Glow - Interaktif Quick Add) */}
               <div 
                 onClick={handleAddWater}
-                className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                className="stat-card relative group cursor-pointer"
                 title="Klik untuk catat +1 gelas minum air! 💧"
               >
                 <div className="flex items-center justify-between">
@@ -631,7 +631,7 @@ export default function App() {
               {/* Card 3: HP (Warm Coral Glow) */}
               <div 
                 onClick={() => triggerSimulation("phone")}
-                className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                className="stat-card relative group cursor-pointer"
                 title="Klik untuk simulasi deteksi HP"
               >
                 <div className="flex items-center justify-between">
@@ -656,44 +656,44 @@ export default function App() {
               {/* Card 4: Layar (Lavender Violet Glow - Interaktif Break Timer 20-20-20) */}
               <div 
                 onClick={handleStartBreak}
-                className="stat-card relative rounded-2xl p-2.5 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                className="stat-card relative group cursor-pointer"
                 title={breakTimerActive ? "Klik untuk hentikan timer 20-20-20" : "Klik untuk mulai istirahat 20-20-20"}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-neutral-300 font-display group-hover:text-purple-300 transition-colors">
-                    {breakTimerActive ? `Istirahat (${breakTimerCountdown}s)` : "Layar (20-20-20)"}
+                    {breakTimerActive ? `Istirahat` : "Layar"}
                   </span>
                   <div className={`p-1 rounded-full border transition-all ${
                     breakTimerActive 
-                      ? "bg-purple-500/30 border-purple-400 shadow-[0_0_12px_rgba(192,132,252,0.8)]" 
+                      ? "bg-purple-500/30 border-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.8)]" 
                       : "bg-[#c084fc]/15 border-[#c084fc]/30 group-hover:shadow-[0_0_10px_rgba(192,132,252,0.5)]"
                   }`}>
                     <Monitor className="h-3 w-3 text-[#c084fc]" />
                   </div>
                 </div>
                 <p className="font-mono my-0.5 text-base font-extrabold leading-none text-white flex items-center justify-between">
-                  <span>{breakTimerActive ? `${breakTimerCountdown} detik` : metrics.screenTime}</span>
-                  <span className={`text-[10px] font-bold ${breakTimerActive ? "text-pink-400 animate-pulse" : "text-purple-400 opacity-80 group-hover:opacity-100"}`}>
-                    {breakTimerActive ? "● Berjalan" : "Mulai"}
+                  <span>{breakTimerActive ? `${breakTimerCountdown}s` : metrics.screenTime}</span>
+                  <span className={`text-[9px] font-bold ${breakTimerActive ? "text-pink-400 animate-pulse" : "text-purple-400 opacity-80 group-hover:opacity-100"}`}>
+                    {breakTimerActive ? "Stop" : "Mulai"}
                   </span>
                 </p>
                 <div>
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[8.5px] font-bold ${
                     breakTimerActive 
-                      ? "border-pink-500/50 bg-pink-500/20 text-pink-300 shadow-[0_0_10px_rgba(244,63,94,0.4)]" 
+                      ? "border-pink-500/50 bg-pink-500/20 text-pink-300 shadow-[0_0_8px_rgba(244,63,94,0.4)]" 
                       : metrics.screenStatus === "Aman" 
                         ? "border-[#22c55e]/40 bg-[#22c55e]/15 text-[#22c55e]" 
                         : "border-[#c084fc]/40 bg-[#c084fc]/15 text-[#c084fc]"
                   }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${breakTimerActive ? "bg-pink-400" : metrics.screenStatus === "Aman" ? "bg-[#22c55e]" : "bg-[#c084fc]"} animate-pulse`} />
-                    {breakTimerActive ? "Mata Istirahat" : metrics.screenStatus}
+                    {breakTimerActive ? "Istirahat" : metrics.screenStatus}
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Quick Action Navigation Footer */}
-            <div className="mt-1 flex items-center justify-between gap-1.5 pt-0.5">
+            <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between gap-1.5">
               <button 
                 onClick={() => triggerSimulation("blink")}
                 className="flex-1 rounded-full border px-2.5 py-1 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/15 text-[#06b6d4]"

@@ -67,7 +67,7 @@ export default function App() {
   useEffect(() => {
     let bounds = { x: 180.0, y: 0.0, width: 280.0, height: 56.0 };
     if (widgetState === "alert") {
-      bounds = { x: 115.0, y: 0.0, width: 410.0, height: 56.0 };
+      bounds = { x: 135.0, y: 0.0, width: 370.0, height: 56.0 };
     } else if (widgetState === "expanded") {
       bounds = { x: 115.0, y: 0.0, width: 410.0, height: 265.0 };
     }
@@ -188,7 +188,7 @@ export default function App() {
           widgetState === "idle"
             ? "island-shell-idle h-14 w-[280px] rounded-full justify-center"
             : widgetState === "alert"
-              ? "island-shell-alert h-14 w-[410px] rounded-full justify-center"
+              ? "island-shell-alert h-14 w-[370px] rounded-full justify-center"
               : "island-shell-expanded w-[410px] h-auto rounded-[2.2rem] px-5 pt-3.5 pb-4"
         }`}
       >
@@ -228,38 +228,97 @@ export default function App() {
         )}
 
         {/* =================================================================== */}
-        {/* 2. STATE: ALERT (Pill Meluas dengan 3 Sub-Pill Warna-Warni)         */}
+        {/* 2. STATE: ALERT (Cyber-Kawaii Status Banner + Maskot)               */}
         {/* =================================================================== */}
         {widgetState === "alert" && (
           <div 
-            className="w-full flex items-center justify-center gap-2.5 text-[11px] z-10"
-            style={{ paddingLeft: "36px", paddingRight: "36px" }}
+            className="w-full h-full flex items-center justify-between z-10 px-3.5"
           >
-            {/* Sub-Pill 1: Mata (Biru Toska / Cyan) */}
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-[0_0_10px_rgba(6,182,212,0.3)] justify-center transition-all shrink-0 ${
-              activeCategory === "blink" ? "bg-[#06B6D4]/30 border-[#06B6D4]" : "bg-[#06B6D4]/15 border-[#06B6D4]/40"
-            }`}>
-              <Eye className="w-3.5 h-3.5 text-[#06B6D4] shrink-0" />
-              <span className="text-neutral-200 font-bold font-display text-[10px]">Mata</span>
-              <span className="text-[#06B6D4] text-[10px] font-mono font-extrabold">{metrics.blinkRate}</span>
+            {/* Kiri: Maskot Jelly Pulse Mini dengan Animasi */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="relative flex items-center justify-center">
+                <div className="absolute w-8 h-8 bg-pink-500/35 rounded-full blur-md animate-soft-glow" />
+                <img 
+                  src={mascotImg} 
+                  alt="Pulse Maskot" 
+                  className="w-8 h-8 object-contain relative z-10 animate-breathe drop-shadow-[0_0_10px_rgba(244,63,94,0.6)]" 
+                />
+              </div>
             </div>
 
-            {/* Sub-Pill 2: HP (Oranye) */}
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-[0_0_10px_rgba(249,115,22,0.3)] justify-center transition-all shrink-0 ${
-              activeCategory === "phone" ? "bg-[#F97316]/30 border-[#F97316]" : "bg-[#F97316]/15 border-[#F97316]/40"
-            }`}>
-              <Timer className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
-              <span className="text-neutral-200 font-bold font-display text-[10px]">HP</span>
-              <span className="text-[#F97316] text-[10px] font-mono font-extrabold">{metrics.phoneUsage}</span>
+            {/* Tengah: Pesan Status Dinamis Banner */}
+            <div className="min-w-0 flex-1 px-2.5">
+              {activeCategory === "phone" ? (
+                <div>
+                  <p className="font-display text-[11px] font-black leading-tight text-[#f97316] tracking-wide truncate">
+                    HP Terlalu Lama!
+                  </p>
+                  <p className="truncate text-[8.5px] font-semibold text-neutral-300">
+                    Yuk istirahat sejenak 📱
+                  </p>
+                </div>
+              ) : activeCategory === "blink" ? (
+                <div>
+                  <p className="font-display text-[11px] font-black leading-tight text-[#06b6d4] tracking-wide truncate">
+                    Kedip Matamu!
+                  </p>
+                  <p className="truncate text-[8.5px] font-semibold text-neutral-300">
+                    Cegah mata lelah & kering 👀
+                  </p>
+                </div>
+              ) : activeCategory === "hydration" ? (
+                <div>
+                  <p className="font-display text-[11px] font-black leading-tight text-[#38bdf8] tracking-wide truncate">
+                    Waktunya Minum Air!
+                  </p>
+                  <p className="truncate text-[8.5px] font-semibold text-neutral-300">
+                    Jaga hidrasi & fokus tubuh 💧
+                  </p>
+                </div>
+              ) : activeCategory === "screentime" ? (
+                <div>
+                  <p className="font-display text-[11px] font-black leading-tight text-[#c084fc] tracking-wide truncate">
+                    Aturan 20-20-20!
+                  </p>
+                  <p className="truncate text-[8.5px] font-semibold text-neutral-300">
+                    Lihat objek jauh 20 detik 🌿
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p className="font-display text-[11px] font-black leading-tight text-purple-300 tracking-wide truncate">
+                    NotchPulse Siaga
+                  </p>
+                  <p className="truncate text-[8.5px] font-semibold text-neutral-300">
+                    Memantau pola sehatmu ✨
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Sub-Pill 3: Air (Biru Langit) */}
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border shadow-[0_0_10px_rgba(56,189,248,0.3)] justify-center transition-all shrink-0 ${
-              activeCategory === "hydration" ? "bg-[#38bdf8]/30 border-[#38bdf8]" : "bg-[#38bdf8]/15 border-[#38bdf8]/40"
-            }`}>
-              <Droplets className="w-3.5 h-3.5 text-[#38bdf8] shrink-0" />
-              <span className="text-neutral-200 font-bold font-display text-[10px]">Air</span>
-              <span className="text-[#38bdf8] text-[10px] font-mono font-extrabold">{metrics.hydration}</span>
+            {/* Kanan: Badge Metrik Aktif dengan Dot Berdenyut */}
+            <div className="shrink-0">
+              {activeCategory === "phone" ? (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#f97316]/50 bg-[#f97316]/20 shadow-[0_0_12px_rgba(249,115,22,0.4)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] animate-pulse" />
+                  <span className="text-[#f97316] text-[10px] font-mono font-black">{metrics.phoneUsage}</span>
+                </div>
+              ) : activeCategory === "blink" ? (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#06b6d4]/50 bg-[#06b6d4]/20 shadow-[0_0_12px_rgba(6,182,212,0.4)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#06b6d4] animate-pulse" />
+                  <span className="text-[#06b6d4] text-[10px] font-mono font-black">{metrics.blinkRate}</span>
+                </div>
+              ) : activeCategory === "hydration" ? (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#38bdf8]/50 bg-[#38bdf8]/20 shadow-[0_0_12px_rgba(56,189,248,0.4)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] animate-pulse" />
+                  <span className="text-[#38bdf8] text-[10px] font-mono font-black">{metrics.hydration}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-[#c084fc]/50 bg-[#c084fc]/20 shadow-[0_0_12px_rgba(192,132,252,0.4)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#c084fc] animate-pulse" />
+                  <span className="text-[#c084fc] text-[10px] font-mono font-black">{metrics.screenTime}</span>
+                </div>
+              )}
             </div>
           </div>
         )}

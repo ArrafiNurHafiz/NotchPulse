@@ -71,7 +71,7 @@ export default function App() {
     if (widgetState === "alert") {
       bounds = { x: 120.0, y: 0.0, width: 400.0, height: 56.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 90.0, y: 0.0, width: 450.0, height: 420.0 };
+      bounds = { x: 85.0, y: 0.0, width: 460.0, height: 450.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -317,7 +317,7 @@ export default function App() {
             ? "island-shell-idle h-14 w-[290px] rounded-full justify-center"
             : widgetState === "alert"
               ? "island-shell-alert h-14 w-[400px] rounded-full justify-center"
-              : "island-shell-expanded w-[420px] h-auto rounded-3xl px-5 pt-3.5 pb-6"
+              : "island-shell-expanded w-[420px] h-auto rounded-3xl px-5 pt-3.5 pb-8"
         }`}
       >
         {/* =================================================================== */}
@@ -693,28 +693,28 @@ export default function App() {
             </div>
 
             {/* Quick Action Navigation Footer */}
-            <div className="mt-4 pt-3 pb-2 px-2 border-t border-white/8 bg-gradient-to-t from-[#07050e]/95 via-[#0d0c15]/80 to-transparent backdrop-blur-xl -webkit-backdrop-filter-blur-xl flex items-center justify-between gap-1.5 relative z-50 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]">
+            <div className="mt-3 pt-3 pb-3 px-2 border-t border-white/8 bg-gradient-to-t from-[#07050e]/95 via-[#0d0c15]/80 to-transparent backdrop-blur-xl -webkit-backdrop-filter-blur-xl flex items-center justify-between gap-1.5 relative z-50 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]">
               <button 
                 onClick={() => triggerSimulation("blink")}
-                className="flex-1 rounded-full border px-2.5 py-1 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/15 text-[#06b6d4]"
+                className="flex-1 rounded-full border px-2.5 py-1.5 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/15 text-[#06b6d4]"
               >
                 Mata
               </button>
               <button 
                 onClick={() => triggerSimulation("phone")}
-                className="flex-1 rounded-full border px-2.5 py-1 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 border-[#f97316]/40 bg-[#f97316]/15 text-[#f97316]"
+                className="flex-1 rounded-full border px-2.5 py-1.5 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 border-[#f97316]/40 bg-[#f97316]/15 text-[#f97316]"
               >
                 HP
               </button>
               <button 
                 onClick={handleAddWater}
-                className="flex-1 rounded-full border px-2.5 py-1 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 border-[#38bdf8]/40 bg-[#38bdf8]/15 text-[#38bdf8]"
+                className="flex-1 rounded-full border px-2.5 py-1.5 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 border-[#38bdf8]/40 bg-[#38bdf8]/15 text-[#38bdf8]"
               >
                 + Air
               </button>
               <button 
                 onClick={handleStartBreak}
-                className={`flex-1 rounded-full border px-2.5 py-1 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 ${
+                className={`flex-1 rounded-full border px-2.5 py-1.5 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 ${
                   breakTimerActive 
                     ? "border-pink-500/60 bg-pink-500/25 text-pink-300 shadow-[0_0_10px_rgba(244,63,94,0.5)]" 
                     : "border-[#c084fc]/40 bg-[#c084fc]/15 text-[#c084fc]"
@@ -724,7 +724,7 @@ export default function App() {
               </button>
               <button 
                 onClick={resetToIdle}
-                className="rounded-full border border-white/10 bg-white/5 p-1.5 hover:bg-white/15 transition-all active:rotate-180"
+                className="rounded-full border border-white/10 bg-white/5 p-2 hover:bg-white/15 transition-all active:rotate-180"
                 title="Reset ke mode Idle"
               >
                 <RefreshCcw className="h-3 w-3 text-neutral-300" />

@@ -315,8 +315,10 @@ export default function App() {
               onClick={(e) => {
                 e.stopPropagation();
                 handleMascotPoke();
+                // Toggle ke expanded saat di-klik dari idle
+                setWidgetState("expanded");
               }}
-              title="Klik untuk poke Pulse! ✨"
+              title="Klik untuk buka dashboard! ✨"
             >
               <div className="relative flex items-center justify-center">
                 <div className={`absolute w-9 h-9 rounded-full blur-md animate-soft-glow ${

@@ -65,7 +65,7 @@ export default function App() {
 
   // Update input region dinamis ke Wayland layer-shell
   useEffect(() => {
-    let bounds = { x: 220.0, y: 0.0, width: 200.0, height: 48.0 };
+    let bounds = { x: 180.0, y: 0.0, width: 280.0, height: 56.0 };
     if (widgetState === "alert") {
       bounds = { x: 130.0, y: 0.0, width: 380.0, height: 48.0 };
     } else if (widgetState === "expanded") {
@@ -178,38 +178,44 @@ export default function App() {
       onMouseLeave={handleMouseLeave}
     >
       {/* Dynamic Island Capsule - Desain Playful Lovable Glow */}
-      <button 
+      <div 
+        role="button"
+        tabIndex={0}
         aria-label="NotchPulse Dynamic Island"
         onClick={handlePillClick}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handlePillClick(); }}
         className={`island-shell relative z-20 cursor-pointer overflow-hidden flex flex-col items-center text-left ${
           widgetState === "idle"
-            ? "island-shell-idle h-12 w-48 rounded-full px-4 py-1.5 justify-center"
+            ? "island-shell-idle h-14 w-[280px] rounded-full justify-center"
             : widgetState === "alert"
               ? "island-shell-alert h-12 w-[380px] rounded-full px-4 py-1.5 justify-center"
               : "island-shell-expanded w-[410px] h-auto rounded-[2.2rem] px-6 pt-4 pb-4.5"
         }`}
       >
         {/* =================================================================== */}
-        {/* 1. STATE: IDLE (h-12 w-48 rounded-full - Maskot Jelly & Waveform)   */}
+        {/* 1. STATE: IDLE (h-14 w-[280px] rounded-full - Maskot Jelly & Waveform) */}
         {/* =================================================================== */}
         {widgetState === "idle" && (
-          <div className="w-full flex items-center justify-between z-10 px-1">
+          <div 
+            className="w-full flex items-center justify-between z-10"
+            style={{ paddingLeft: "22px", paddingRight: "32px" }}
+          >
             {/* Kiri: Maskot Jelly Pulse Mini Lucu */}
-            <div className="flex items-center gap-1.5 pl-0.5">
+            <div className="flex items-center gap-2">
               <img 
                 src={mascotImg} 
                 alt="Pulse Maskot" 
-                className="w-7 h-7 object-contain animate-breathe drop-shadow-[0_0_8px_rgba(168,85,247,0.5)]" 
+                className="w-8 h-8 object-contain animate-breathe drop-shadow-[0_0_10px_rgba(168,85,247,0.55)]" 
               />
-              <span className="text-xs font-bold text-white tracking-wide font-display">Pulse</span>
+              <span className="text-sm font-bold text-white tracking-wide font-display">Pulse</span>
             </div>
 
             {/* Kanan: Equalizer Waveform Ungu Neon dengan Safe Padding */}
-            <div className="flex items-center gap-1 pr-1.5">
-              <div className="flex items-end gap-1 h-3.5 text-[#c084fc]">
-                <span className="w-1 bg-[#c084fc] rounded-full h-2 animate-pulse" />
-                <span className="w-1 bg-[#c084fc] rounded-full h-3.5 animate-pulse" style={{ animationDelay: "150ms" }} />
-                <span className="w-1 bg-[#c084fc] rounded-full h-2.5 animate-pulse" style={{ animationDelay: "300ms" }} />
+            <div className="flex items-center">
+              <div className="flex items-end gap-1.5 h-4 text-[#c084fc]">
+                <span className="w-1.5 bg-[#c084fc] rounded-full h-2.5 animate-pulse" />
+                <span className="w-1.5 bg-[#c084fc] rounded-full h-4 animate-pulse" style={{ animationDelay: "150ms" }} />
+                <span className="w-1.5 bg-[#c084fc] rounded-full h-3 animate-pulse" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           </div>
@@ -395,7 +401,7 @@ export default function App() {
             </div>
           </div>
         )}
-      </button>
+      </div>
     </div>
   );
 }

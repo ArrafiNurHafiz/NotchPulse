@@ -6,8 +6,7 @@ import {
   Timer,
   Pin,
   PinOff,
-  RefreshCcw,
-  Sparkles
+  RefreshCcw
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import mascotImg from "./assets/island_mascot.png";
@@ -524,53 +523,56 @@ export default function App() {
         )}
 
         {/* =================================================================== */}
-        {/* 3. STATE: EXPANDED (Bento Grid 2x2 Doppelrand Glass)                */}
+        {/* 3. STATE: EXPANDED (Premium Bento Grid + Refined Cyber-Kawaii)          */}
         {/* =================================================================== */}
         {widgetState === "expanded" && (
           <div 
             onClick={(e) => e.stopPropagation()} 
-            className="animate-pop-in flex flex-col w-full max-w-[370px] mx-auto gap-2.5"
+            className="animate-pop-in flex flex-col w-full max-w-[380px] mx-auto gap-4"
           >
-            {/* Header: Maskot Pulse Lucu (Besar & Juicy, Interaktif Poke), Title & Tagline, Jam, Pin Toggle */}
-            <div className="flex items-center gap-2.5 pb-0.5">
+            {/* Header: Premium Branding + Better Typography */}
+            <div className="flex items-center gap-3.5">
               <div 
-                className="relative flex items-center justify-center shrink-0 cursor-pointer"
+                className="relative flex items-center justify-center shrink-0 cursor-pointer group"
                 onClick={handleMascotPoke}
                 title="Klik untuk poke Pulse! 💖"
               >
-                <div className={`absolute w-12 h-12 rounded-full blur-lg animate-soft-glow ${
-                  mascotPokeActive ? "bg-pink-400/60 scale-125" : "bg-purple-500/35"
-                } transition-all duration-300`} />
+                <div className={`absolute w-14 h-14 rounded-full blur-2xl transition-all duration-300 ${
+                  mascotPokeActive ? "bg-gradient-to-br from-pink-400 to-red-400/60 scale-125" : "bg-gradient-to-br from-purple-500/40 to-blue-500/20"
+                }`} />
                 <img 
                   src={mascotImg} 
                   alt="Pulse si maskot jelly lucu" 
-                  className={`h-12 w-12 object-contain relative z-10 drop-shadow-[0_0_16px_rgba(168,85,247,0.75)] ${
-                    mascotPokeActive ? "animate-jelly-poke" : "animate-breathe"
+                  className={`h-14 w-14 object-contain relative z-10 drop-shadow-[0_0_20px_rgba(192,132,252,0.8)] transition-transform duration-200 group-hover:scale-110 ${
+                    mascotPokeActive ? "animate-jelly-poke scale-110" : "animate-breathe"
                   }`} 
                 />
                 {mascotPokeActive && (
-                  <span className="absolute -top-1 -right-1 text-xs animate-pop-in select-none">✨</span>
+                  <span className="absolute -top-2 -right-2 text-lg animate-pop-in select-none">✨</span>
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <p className="font-display text-sm font-black text-white tracking-wide">NotchPulse</p>
-                  <Sparkles className="w-3 h-3 text-pink-400" />
+                <div className="flex items-baseline gap-2">
+                  <h1 className="font-display text-lg font-black text-white tracking-tight leading-none">NotchPulse</h1>
+                  <span className="text-xs font-semibold text-purple-300/70">digital health</span>
                 </div>
-                <p className="text-[9px] font-semibold text-purple-200/75 tracking-wide">Sahabat Sehat Digitalmu</p>
+                <p className="text-xs font-medium text-neutral-400 mt-1">Sahabat sehat digitalmu</p>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono text-xs font-bold text-neutral-200 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">{currentTime}</span>
+              <div className="flex items-center gap-2.5 ml-auto">
+                <div className="text-right">
+                  <span className="block font-mono text-xs font-bold text-neutral-200 tracking-tight">{currentTime}</span>
+                  <span className="block text-[10px] font-medium text-neutral-500 mt-0.5">status aktif</span>
+                </div>
                 <button 
                   onClick={() => setPinned(!pinned)}
                   title={pinned ? "Pinned (Tetap terbuka)" : "Auto-collapse aktif"}
-                  className={`p-1.5 rounded-full transition-all border ${
+                  className={`p-2 rounded-lg transition-all border backdrop-blur-sm ${
                     pinned 
-                      ? "bg-purple-600/30 text-purple-300 border-purple-500/50 shadow-[0_0_10px_rgba(168,85,247,0.5)]" 
-                      : "bg-white/5 text-neutral-400 border-white/10 hover:text-white hover:bg-white/10"
+                      ? "bg-purple-600/30 text-purple-200 border-purple-500/40 shadow-[0_0_12px_rgba(168,85,247,0.35)]" 
+                      : "bg-white/5 text-neutral-400 border-white/10 hover:bg-white/10 hover:text-white"
                   }`}
                 >
-                  {pinned ? <Pin className="w-3 h-3 text-pink-400" /> : <PinOff className="w-3 h-3" />}
+                  {pinned ? <Pin className="w-4 h-4" /> : <PinOff className="w-4 h-4" />}
                 </button>
               </div>
             </div>

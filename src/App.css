@@ -78,32 +78,39 @@ html, body, #root {
 }
 
 .island-shell-expanded {
+  background: linear-gradient(180deg, rgba(18, 14, 32, 0.96) 0%, rgba(13, 11, 24, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 
-    0 0 0 1px rgba(255, 255, 255, 0.15),
-    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.3),
-    0 24px 60px -12px rgba(168, 85, 247, 0.55),
-    0 6px 20px -2px rgba(244, 63, 94, 0.28);
+    0 0 0 1px rgba(168, 85, 247, 0.18),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 0.25),
+    0 20px 50px -10px rgba(0, 0, 0, 0.7),
+    0 10px 30px -5px rgba(168, 85, 247, 0.35);
 }
 
-/* Stat Cards: Cyber-Kawaii Bento Doppelrand Glass */
+/* Stat Cards: Cyber-Kawaii Bento Doppelrand Glass (Refined Premium) */
 .stat-card {
-  background-color: rgba(18, 14, 36, 0.85);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: linear-gradient(135deg, rgba(26, 20, 48, 0.75) 0%, rgba(18, 14, 34, 0.85) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
   box-shadow: 
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-    0 4px 14px -3px rgba(0, 0, 0, 0.45);
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.12),
+    0 4px 16px -2px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .stat-card:hover {
-  background-color: rgba(26, 20, 50, 0.95);
-  border-color: rgba(168, 85, 247, 0.35);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(34, 26, 64, 0.85) 0%, rgba(22, 16, 44, 0.92) 100%);
+  border-color: rgba(192, 132, 252, 0.4);
+  transform: translateY(-2px) scale(1.01);
   box-shadow: 
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
-    0 8px 24px -4px rgba(168, 85, 247, 0.25);
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.2),
+    0 12px 28px -6px rgba(168, 85, 247, 0.35);
+}
+
+.stat-card:active {
+  transform: translateY(0) scale(0.98);
 }
 
 /* Animations */

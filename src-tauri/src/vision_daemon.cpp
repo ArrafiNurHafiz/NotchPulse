@@ -48,11 +48,13 @@ std::vector<Detection> postprocess_yolo(const cv::Mat& output, float conf_thresh
         float h = row_ptr[3];
 
         const float* scores = row_ptr + 4;
-        // Kelas COCO: 67 (cell phone), 39 (bottle), 41 (cup), 40 (wine glass)
-        int target_classes[] = {67, 39, 41, 40};
+        // Kelas COCO: 67 (cell phone), 39 (bottle), 41 (cup), 40 (wine glass), 42 (fork), 43 (knife), 44 (spoon), 45 (bowl)
+        int target_classes[] = {67, 39, 41, 40, 45};
         for (int cls : target_classes) {
             float conf = scores[cls];
-            if (conf >= conf_threshold) {
+            // Threshold lebih sensitif untuk objek minuman (0.18) dan ponsel (0.22)
+            float threshold = (cls == 67) ? 0.22f : 0.16f;
+            if (conf >= threshold) {
                 int left = static_cast<int>((cx - 0.5f * w) * x_factor);
                 int top = static_cast<int>((cy - 0.5f * h) * y_factor);
                 int width = static_cast<int>(w * x_factor);
@@ -170,11 +172,11 @@ int main() {
         // Estimasi nilai EAR adaptif: 2 mata = 0.35 (terbuka penuh), 1 mata = 0.25, 0 mata = 0.10 (tertutup/kedip)
         double ear = (eyes_detected >= 2) ? 0.35 : (eyes_detected == 1 ? 0.25 : (presence ? 0.10 : 0.0));
         if (presence) {
-            if (ear <= 0.15 && eye_was_open) {
-                // Transisi mata menutup (kedipan nyata)
+            // Jika mata sebelumnya terbuka dan sekarang 0 mata terdeteksi di area wajah
+            if (eyes_detected == 0 && eye_was_open) {
                 blink_timestamps.push_back(now_unix);
                 eye_was_open = false;
-            } else if (ear >= 0.25) {
+            } else if (eyes_detected >= 1) {
                 eye_was_open = true;
             }
         }
@@ -191,30 +193,38 @@ int main() {
         std::vector<cv::Mat> yolo_outputs;
         yolo_net.forward(yolo_outputs, yolo_net.getUnconnectedOutLayersNames());
 
-        auto detections = postprocess_yolo(yolo_outputs[0], 0.25f, 0.45f, frame.cols, frame.rows);
+        auto detections = postprocess_yolo(yolo_outputs[0], 0.16f, 0.45f, frame.cols, frame.rows);
 
         bool phone_detected = false;
         bool drinking_action = false;
 
-        cv::Rect mouth_region(0, 0, 0, 0);
+        cv::Rect lower_face_region(0, 0, 0, 0);
         if (presence) {
-            // Region mulut & dagu diperluas agar overlap botol/cangkir terdeteksi natural
-            mouth_region = cv::Rect(
-                std::max(0, face_box.x + static_cast<int>(face_box.width * 0.1)),
-                std::min(frame.rows - 1, face_box.y + static_cast<int>(face_box.height * 0.55)),
-                std::min(frame.cols - face_box.x, static_cast<int>(face_box.width * 0.8)),
-                std::min(frame.rows - face_box.y, static_cast<int>(face_box.height * 0.55))
-            );
+            // Area mulut, dagu, dan leher diperlebar ke bawah untuk menangkap gelas/botol yang ditempelkan
+            int lower_y = face_box.y + static_cast<int>(face_box.height * 0.45);
+            int lower_h = static_cast<int>(face_box.height * 0.85);
+            int lower_x = std::max(0, face_box.x - static_cast<int>(face_box.width * 0.15));
+            int lower_w = std::min(frame.cols - lower_x, static_cast<int>(face_box.width * 1.3));
+            lower_face_region = cv::Rect(lower_x, std::min(frame.rows - 1, lower_y), lower_w, std::min(frame.rows - lower_y, lower_h));
         }
 
         for (const auto& det : detections) {
             if (det.class_id == 67) { // cell phone
                 phone_detected = true;
-            } else if (det.class_id == 39 || det.class_id == 41 || det.class_id == 40) { // bottle / cup / wine glass
+            } else if (det.class_id == 39 || det.class_id == 41 || det.class_id == 40 || det.class_id == 45) { // bottle, cup, wine glass, bowl
                 if (presence) {
-                    cv::Rect intersection = det.box & mouth_region;
-                    // Deteksi overlap atau jarak dekat antara botol dan area mulut
-                    if (intersection.area() > 0 || (std::abs((det.box.x + det.box.width / 2) - (mouth_region.x + mouth_region.width / 2)) < face_box.width * 0.5 && std::abs((det.box.y + det.box.height / 2) - (mouth_region.y + mouth_region.height / 2)) < face_box.height * 0.6)) {
+                    cv::Rect intersection = det.box & lower_face_region;
+                    // Bounding box botol/cangkir bersentuhan atau berada di area mulut/dagu
+                    int obj_center_x = det.box.x + det.box.width / 2;
+                    int obj_center_y = det.box.y + det.box.height / 2;
+                    int face_center_x = face_box.x + face_box.width / 2;
+                    int face_center_y = face_box.y + face_box.height / 2;
+
+                    bool overlap = intersection.area() > 0;
+                    bool nearby = (std::abs(obj_center_x - face_center_x) < face_box.width * 0.8) &&
+                                  (obj_center_y > face_box.y && obj_center_y < face_box.y + face_box.height * 1.5);
+
+                    if (overlap || nearby) {
                         drinking_action = true;
                     }
                 }
@@ -229,16 +239,21 @@ int main() {
             continuous_phone_sec = 0.0;
         }
 
-        // Pelacak aksi minum air (responsif: 1-2 tick / ~450-900ms sudah mencatat hidrasi)
+        // Pelacak aksi minum air dengan debounce (cooldown 15 detik agar tidak menghitung ganda per teguk)
+        static int64_t last_hydration_trigger_time = 0;
         if (drinking_action) {
             consecutive_drinking_ticks++;
-            if (consecutive_drinking_ticks >= 1) { 
-                hydration_count++;
-                last_hydration_timestamp = now_unix;
+            // 2 tick berturut-turut (~300ms) untuk validasi aksi minum nyata
+            if (consecutive_drinking_ticks >= 2) { 
+                if (now_unix - last_hydration_trigger_time > 15) {
+                    hydration_count++;
+                    last_hydration_timestamp = now_unix;
+                    last_hydration_trigger_time = now_unix;
+                }
                 consecutive_drinking_ticks = 0;
             }
         } else {
-            consecutive_drinking_ticks = 0;
+            if (consecutive_drinking_ticks > 0) consecutive_drinking_ticks--;
         }
 
         int64_t last_hydration_sec_ago = now_unix - last_hydration_timestamp;
@@ -289,7 +304,7 @@ int main() {
             std::rename((out_path + ".tmp").c_str(), out_path.c_str());
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(450));
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
     }
 
     return 0;

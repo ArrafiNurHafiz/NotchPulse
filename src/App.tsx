@@ -69,7 +69,7 @@ export default function App() {
     if (widgetState === "alert") {
       bounds = { x: 130.0, y: 0.0, width: 380.0, height: 48.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 130.0, y: 0.0, width: 380.0, height: 235.0 };
+      bounds = { x: 115.0, y: 0.0, width: 410.0, height: 255.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -186,7 +186,7 @@ export default function App() {
             ? "island-shell-idle h-12 w-48 rounded-full px-4 py-1.5 justify-center"
             : widgetState === "alert"
               ? "island-shell-alert h-12 w-[380px] rounded-full px-4 py-1.5 justify-center"
-              : "island-shell-expanded w-[370px] h-auto rounded-[2rem] px-4 pt-3 pb-3.5"
+              : "island-shell-expanded w-[410px] h-auto rounded-[2.2rem] px-6 pt-4 pb-4.5"
         }`}
       >
         {/* =================================================================== */}
@@ -255,7 +255,7 @@ export default function App() {
         {widgetState === "expanded" && (
           <div 
             onClick={(e) => e.stopPropagation()} 
-            className="animate-pop-in flex flex-col w-full gap-2"
+            className="animate-pop-in flex flex-col w-full max-w-[340px] mx-auto gap-2.5"
           >
             {/* Header: Maskot Pulse, Title, Jam, Pin Toggle */}
             <div className="flex items-center gap-2 pb-1">

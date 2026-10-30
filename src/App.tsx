@@ -40,6 +40,7 @@ export default function App() {
   const [reasoningExpanded, setReasoningExpanded] = useState(false);
   const collapseTimerRef = useRef<number | null>(null);
   const breakIntervalRef = useRef<number | null>(null);
+  const alertDebounceRef = useRef<{lastAlert: string; stableCount: number}>({lastAlert: "idle", stableCount: 0});
 
   // Data telemetri real-time optik
   const [metrics, setMetrics] = useState({
@@ -98,20 +99,33 @@ export default function App() {
             screenStatus: data.screen_time_minutes >= 20 ? "Perlu istirahat" : "Aman"
           }));
 
-          // Detect alert state change → auto-trigger UI transition
+          // Detect alert state change with hysteresis (debounce 3 polls = 1.2s stable)
           const currentAlertStr = String(data.current_alert || "idle").toLowerCase();
-          console.log("[POLLING] Alert check:", currentAlertStr);
-          if (currentAlertStr !== "idle" && currentAlertStr !== "none") {
-            console.log("[POLLING] ALERT DETECTED! Setting state to 'alert'");
-            setActiveCategory(currentAlertStr as AlertCategory);
-            setWidgetState("alert");  // Force alert state immediately
-            if (data.severity) setAlertSeverity(data.severity as any);
-            if (data.reasoning) setAlertReasoning(data.reasoning || "");
+          const debounce = alertDebounceRef.current;
+          
+          // Track alert stability
+          if (currentAlertStr === debounce.lastAlert) {
+            debounce.stableCount++;
           } else {
-            // Alert cleared — return to idle/pulse or expanded (if pinned)
-            console.log("[POLLING] Alert cleared, resetting to idle/expanded");
-            setActiveCategory("none");
-            setWidgetState(pinned ? "expanded" : "idle");
+            debounce.lastAlert = currentAlertStr;
+            debounce.stableCount = 1;
+          }
+          
+          console.log("[POLLING] Alert:", currentAlertStr, "stable:", debounce.stableCount);
+          
+          // Only trigger state change after 3 stable polls (1.2s)
+          if (debounce.stableCount >= 3) {
+            if (currentAlertStr !== "idle" && currentAlertStr !== "none") {
+              console.log("[POLLING] ALERT STABLE! Setting state to 'alert'");
+              setActiveCategory(currentAlertStr as AlertCategory);
+              setWidgetState("alert");
+              if (data.severity) setAlertSeverity(data.severity as any);
+              if (data.reasoning) setAlertReasoning(data.reasoning || "");
+            } else {
+              console.log("[POLLING] IDLE STABLE! Resetting to idle");
+              setActiveCategory("none");
+              setWidgetState("idle");
+            }
           }
         }
       } catch (err) {

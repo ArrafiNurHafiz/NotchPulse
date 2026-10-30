@@ -164,7 +164,12 @@ export default function App() {
   };
 
   // Toggle klik expand / collapse
-  const handlePillClick = () => {
+  const handlePillClick = (e?: React.MouseEvent) => {
+    // Jangan toggle jika klik berasal dari mascot (data-role="mascot")
+    if (e && (e.target as HTMLElement).closest('[data-role="mascot"]')) {
+      return;
+    }
+    
     if (widgetState === "expanded") {
       setWidgetState(activeCategory !== "none" ? "alert" : "idle");
     } else {
@@ -372,6 +377,7 @@ export default function App() {
             {/* Kiri: Maskot Jelly Pulse Besar 3D dengan Animasi Poke */}
             <div 
               className="flex items-center gap-2 shrink-0 cursor-pointer"
+              data-role="mascot"
               onClick={(e) => {
                 e.stopPropagation();
                 handleMascotPoke();

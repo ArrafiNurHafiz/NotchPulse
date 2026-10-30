@@ -69,7 +69,7 @@ export default function App() {
     if (widgetState === "alert") {
       bounds = { x: 50.0, y: 0.0, width: 360.0, height: 48.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 0.0, y: 0.0, width: 460.0, height: 320.0 };
+      bounds = { x: 25.0, y: 0.0, width: 410.0, height: 320.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -97,10 +97,10 @@ export default function App() {
     listen<EventPayload>("optihabit://event", (event) => {
       const type = event.payload.alert_type.toLowerCase();
       if (type !== "idle" && type !== "none") {
-        setWidgetState("alert");
+        setWidgetState(prev => prev === "expanded" ? "expanded" : "alert");
         setActiveCategory(type as AlertCategory);
       } else {
-        if (!pinned) setWidgetState("idle");
+        setWidgetState(prev => (prev === "expanded" || pinned) ? prev : "idle");
         setActiveCategory("none");
       }
     }).then(unsub => { unlistenEvent = unsub; });
@@ -127,7 +127,7 @@ export default function App() {
     };
   }, [pinned]);
 
-  // Behavior: Auto-collapse 1.5 detik saat kursor keluar (jika tidak di-pin)
+  // Behavior: Auto-collapse 2.5 detik saat kursor keluar (jika tidak di-pin)
   const handleMouseEnter = () => {
     if (collapseTimerRef.current) {
       window.clearTimeout(collapseTimerRef.current);
@@ -139,7 +139,7 @@ export default function App() {
     if (!pinned && widgetState === "expanded") {
       collapseTimerRef.current = window.setTimeout(() => {
         setWidgetState(activeCategory !== "none" ? "alert" : "idle");
-      }, 1500);
+      }, 2500);
     }
   };
 
@@ -191,12 +191,12 @@ export default function App() {
         {/* Specular Highlight Line */}
         <div className="notch-specular" />
         {/* =================================================================== */}
-        {/* 1. STATE: IDLE (Lebar: 220px, Border/Glow: Hijau #22C55E)           */}
+        {/* 1. STATE: IDLE (Lebar: 240px, Border/Glow: Hijau #22C55E)           */}
         {/* =================================================================== */}
         {widgetState === "idle" && (
-          <div className="w-full flex items-center justify-between z-10 px-0.5">
+          <div className="w-full flex items-center justify-between z-10 px-1 overflow-hidden">
             {/* Kiri: Ikon Daun / Fokus */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <div className="w-4 h-4 rounded-full bg-[#22C55E]/20 flex items-center justify-center border border-[#22C55E]/40 shadow-[0_0_8px_rgba(34,197,94,0.4)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse" />
               </div>
@@ -204,7 +204,7 @@ export default function App() {
             </div>
 
             {/* Kanan: Skor & Gelombang Audio Hijau */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs font-mono font-medium text-neutral-300">Skor {metrics.focusScore}</span>
               <div className="flex items-center text-[#22C55E] drop-shadow-[0_0_6px_rgba(34,197,94,0.6)]">
                 <AudioWaveform className="w-3.5 h-3.5 animate-pulse" />
@@ -217,30 +217,30 @@ export default function App() {
         {/* 2. STATE: ALERT (Lebar: 360px, Border/Glow: Oranye #F97316)          */}
         {/* =================================================================== */}
         {widgetState === "alert" && (
-          <div className="w-full flex items-center justify-between gap-1.5 text-[11px] z-10">
+          <div className="w-full flex items-center justify-between gap-1.5 text-[11px] z-10 overflow-hidden">
             {/* Sub-Pill 1: Mata (Biru Toska / Cyan #06B6D4) */}
-            <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border shadow-[0_0_8px_rgba(6,182,212,0.25)] ${
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border shadow-[0_0_8px_rgba(6,182,212,0.25)] flex-1 justify-center ${
               activeCategory === "blink" ? "bg-[#06B6D4]/30 border-[#06B6D4]" : "bg-[#06B6D4]/15 border-[#06B6D4]/35"
             }`}>
-              <Eye className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <Eye className="w-3.5 h-3.5 text-[#06B6D4] shrink-0" />
               <span className="text-neutral-200 font-medium">Mata</span>
               <span className="text-[#06B6D4] text-[10px] font-semibold">{metrics.blinkRate}</span>
             </div>
 
             {/* Sub-Pill 2: HP (Oranye #F97316) */}
-            <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border shadow-[0_0_8px_rgba(249,115,22,0.25)] ${
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border shadow-[0_0_8px_rgba(249,115,22,0.25)] flex-1 justify-center ${
               activeCategory === "phone" ? "bg-[#F97316]/30 border-[#F97316]" : "bg-[#F97316]/15 border-[#F97316]/35"
             }`}>
-              <Smartphone className="w-3.5 h-3.5 text-[#F97316]" />
+              <Smartphone className="w-3.5 h-3.5 text-[#F97316] shrink-0" />
               <span className="text-neutral-200 font-medium">HP</span>
               <span className="text-[#F97316] text-[10px] font-semibold">{metrics.phoneUsage}</span>
             </div>
 
             {/* Sub-Pill 3: Air (Biru Toska / Cyan #06B6D4) */}
-            <div className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border shadow-[0_0_8px_rgba(6,182,212,0.25)] ${
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border shadow-[0_0_8px_rgba(6,182,212,0.25)] flex-1 justify-center ${
               activeCategory === "hydration" ? "bg-[#06B6D4]/30 border-[#06B6D4]" : "bg-[#06B6D4]/15 border-[#06B6D4]/35"
             }`}>
-              <Droplets className="w-3.5 h-3.5 text-[#06B6D4]" />
+              <Droplets className="w-3.5 h-3.5 text-[#06B6D4] shrink-0" />
               <span className="text-neutral-200 font-medium">Air</span>
               <span className="text-[#06B6D4] text-[10px] font-semibold">{metrics.hydration}</span>
             </div>

@@ -42,6 +42,8 @@ pub fn setup_layer_shell(win: &WebviewWindow) -> bool {
         return false;
     }
 
+    gw.set_accept_focus(false);
+    gw.set_focus_on_map(false);
     gw.set_titlebar(None::<&gtk::Widget>);
     let w: &gtk::Window = gw.upcast_ref();
     let ptr = w.to_glib_none().0;
@@ -80,6 +82,15 @@ pub fn setup_layer_shell(win: &WebviewWindow) -> bool {
 fn apply_region(gw: &impl IsA<gtk::Widget>, x: f64, y: f64, width: f64, height: f64) {
     if width >= 400.0 {
         gw.input_shape_combine_region(None);
+        if let Some(gdk_window) = gw.window() {
+            let full_region = gtk::cairo::Region::create_rectangle(&gtk::cairo::RectangleInt::new(
+                0,
+                0,
+                460,
+                320,
+            ));
+            gdk_window.input_shape_combine_region(&full_region, 0, 0);
+        }
         return;
     }
     if let Some(gdk_window) = gw.window() {

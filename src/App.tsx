@@ -71,7 +71,7 @@ export default function App() {
     if (widgetState === "alert") {
       bounds = { x: 120.0, y: 0.0, width: 400.0, height: 56.0 };
     } else if (widgetState === "expanded") {
-      bounds = { x: 95.0, y: 0.0, width: 440.0, height: 380.0 };
+      bounds = { x: 95.0, y: 0.0, width: 440.0, height: 400.0 };
     }
     invoke("update_notch_bounds", bounds).catch(() => {});
   }, [widgetState]);
@@ -528,7 +528,7 @@ export default function App() {
         {widgetState === "expanded" && (
           <div 
             onClick={(e) => e.stopPropagation()} 
-            className="animate-pop-in flex flex-col w-full max-w-[400px] mx-auto gap-5 px-2 pb-3"
+            className="animate-pop-in flex flex-col w-full max-w-[400px] mx-auto gap-5 px-2 pb-5"
           >
             {/* Header: Premium Branding + Better Typography */}
             <div className="flex items-center gap-3.5">
@@ -693,7 +693,7 @@ export default function App() {
             </div>
 
             {/* Quick Action Navigation Footer */}
-            <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between gap-1.5">
+            <div className="mt-4 pt-3 pb-1 px-2 -mx-2 border-t border-white/8 bg-gradient-to-t from-[#07050e]/95 via-[#0d0c15]/80 to-transparent backdrop-blur-xl -webkit-backdrop-filter-blur-xl flex items-center justify-between gap-1.5 relative z-50 shadow-[0_-8px_24px_rgba(0,0,0,0.6)]">
               <button 
                 onClick={() => triggerSimulation("blink")}
                 className="flex-1 rounded-full border px-2.5 py-1 text-[9px] font-bold font-display transition-transform hover:scale-105 active:scale-95 border-[#06b6d4]/40 bg-[#06b6d4]/15 text-[#06b6d4]"
